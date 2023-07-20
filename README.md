@@ -1,1 +1,1 @@
-# .hammerspoon
+# Hammerspoon
