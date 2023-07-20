@@ -56,6 +56,7 @@ function delayedPasteWithoutReturn()
   end)
 end
 
+--- Just a comment
 function reloadConfig(files)
   doReload = false
   for _,file in pairs(files) do
