@@ -7,18 +7,18 @@ spoon.WindowScreenLeftAndRight:bindHotkeys(spoon.WindowScreenLeftAndRight.defaul
 hs.loadSpoon("MouseCircle")
 spoon.MouseCircle:bindHotkeys({show={{"ctrl", "alt", "cmd"}, "M"}} )
 
-hs.loadSpoon("SpoonInstall")
-spoon.SpoonInstall.repos.skrypka = {
-  url = "https://github.com/skrypka/Spoons",
-  desc = "Skrypka's spoon repository",
-}
-spoon.SpoonInstall.use_syncinstall = true
-spoon.SpoonInstall:andUse("PushToTalk", {
-  start = true,
+-- hs.loadSpoon("SpoonInstall")
+-- spoon.SpoonInstall.repos.skrypka = {
+--   url = "https://github.com/skrypka/Spoons",
+--   desc = "Skrypka's spoon repository",
+-- }
+-- spoon.SpoonInstall.use_syncinstall = true
+-- spoon.SpoonInstall:andUse("PushToTalk", {
+--  start = true,
 --  config = {
 --    app_switcher = { ['zoom.us'] = 'push-to-talk' }
 --  }
-})
+-- })
 
 hs.loadSpoon("DeepLTranslate")
 spoon.DeepLTranslate:bindHotkeys({translate={{"ctrl", "alt", "cmd"}, "O"}} )
