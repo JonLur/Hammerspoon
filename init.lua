@@ -19,6 +19,9 @@ spoon.SpoonInstall:andUse("PushToTalk", {
 --    app_switcher = { ['zoom.us'] = 'push-to-talk' }
 --  }
 })
+
+hs.loadSpoon("DeepLTranslate")
+spoon.DeepLTranslate:bindHotkeys({translate={{"ctrl", "alt", "cmd"}, "O"}} )
 -- spoon.PushToTalk.app_switcher = { ['zoom.us'] = 'push-to-talk' }
 
 --- hs.loadSpoon("ToggleSkypeMute")
