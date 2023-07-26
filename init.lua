@@ -21,7 +21,7 @@ spoon.MouseCircle:bindHotkeys({show={{"ctrl", "alt", "cmd"}, "M"}} )
 -- })
 
 hs.loadSpoon("DeepLTranslate")
-spoon.DeepLTranslate:bindHotkeys({translate={{"ctrl", "alt", "cmd"}, "O"}} )
+spoon.DeepLTranslate:bindHotkeys({translate={{"ctrl", "alt"}, "E"}} )
 -- spoon.PushToTalk.app_switcher = { ['zoom.us'] = 'push-to-talk' }
 
 --- hs.loadSpoon("ToggleSkypeMute")
@@ -77,8 +77,8 @@ end
 --      mousepoint = hs.mouse.getAbsolutePosition()
 --      imgkeyboard = hs.drawing.image(hs.geometry.rect(mousepoint.x,mousepoint.y,500,193), "Images/keyboard-with-option.png" )
 --      imgkeyboard:show()
-      -- Set a timer to delete the circle after 3 seconds
-      -- hs.timer.doAfter(5, function() img:delete() end)
+--      Set a timer to delete the circle after 3 seconds
+--      hs.timer.doAfter(5, function() img:delete() end)
 --    else
 --      imgkeyboard:delete()
 --      imgkeyboard = nil
