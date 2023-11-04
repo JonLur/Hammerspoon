@@ -8,18 +8,28 @@ global nettsidearkivProject
 on run
 	set visMelding to true
 	set nettsiderProject to "Nettsider"
-  set engangkanskjeFolder to "Engang / Kanskje"
-  set nettsidearkivProject to "EK-Nettsider"
-	getBrowserURL()
-	addTaskOmniFocus()
-	if visMelding then
-		visStatusMelding()
+	set engangkanskjeFolder to "Engang / Kanskje"
+	set nettsidearkivProject to "EK-Nettsider"
+
+	if application "OmniFocus" is running then
+		getBrowserURL()
+		addTaskOmniFocus()
+		if visMelding then
+			visStatusMelding()
+		end if
+		archiveTaskOmniFocus()
+	else
+		display dialog "OmniFocus kjører ikke" with title "OmniFocus" buttons {"OK"} default button "OK" giving up after 2
 	end if
-  archiveTaskOmniFocus()
 end run
 
 on getBrowserURL()
-	if application "Google Chrome" is frontmost then
+	if application "Microsoft Edge" is frontmost then
+		tell application "Microsoft Edge"
+			set currentTitle to title of active tab of front window
+			set currentURL to URL of active tab of front window
+			end tell
+	else if application "Google Chrome" is frontmost then
 		tell application "Google Chrome"
 			set currentTitle to title of active tab of front window
 			set currentURL to URL of active tab of front window
@@ -36,18 +46,14 @@ end getBrowserURL
 
 
 on addTaskOmniFocus()
-	if application "OmniFocus" is running then
-		tell front document of application "OmniFocus"
-			if project nettsiderProject exists then
-				set currentProject to project nettsiderProject
-				tell currentProject
-					make new task with properties {name:(currentTitle), note:currentURL as text}
-				end tell
-			end if
-		end tell
-	else
-		display dialog "OmniFocus kjører ikke" with title "OmniFocus" buttons {"OK"} default button "OK" giving up after 2
-	end if
+	tell front document of application "OmniFocus"
+		if project nettsiderProject exists then
+			set currentProject to project nettsiderProject
+			tell currentProject
+				make new task with properties {name:(currentTitle), note:currentURL as text}
+			end tell
+		end if
+	end tell
 end addTaskOmniFocus
 
 
