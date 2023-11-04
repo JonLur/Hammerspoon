@@ -20,8 +20,12 @@ spoon.MouseCircle:bindHotkeys({show={{"ctrl", "alt", "cmd"}, "M"}} )
 --  }
 -- })
 
-hs.loadSpoon("DeepLTranslate")
-spoon.DeepLTranslate:bindHotkeys({translate={{"ctrl", "alt"}, "E"}} )
+-- hs.loadSpoon("DeepLTranslate")
+-- spoon.DeepLTranslate:bindHotkeys({translate={{"ctrl", "alt"}, "E"}} )
+-- Run LastPass
+-- hs.hotkey.bind({"ctrl", "alt"}, "E", "DeepLTranslate", function()
+--   spoon.DeepLTranslate:translateSelectionPopup()
+-- end)
 -- spoon.PushToTalk.app_switcher = { ['zoom.us'] = 'push-to-talk' }
 
 --- hs.loadSpoon("ToggleSkypeMute")
