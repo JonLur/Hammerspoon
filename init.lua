@@ -41,6 +41,7 @@ require('cheatsheets')
 require('artsnavn')
 require('evoluent')
 require('battery')
+-- require('dagliglogg')
 --require('pomodoro')
 --require('simplemind')
 local hints = require "hs.hints"
@@ -278,8 +279,12 @@ hs.hotkey.bind({"ctrl", "alt"}, "N", "Note to last modified task OmniFocus", fun
 end)
 
 -- Add logg note with duration to OmniFocus
-hs.hotkey.bind({"ctrl", "alt"}, "J", "Dagliglogg to OmniFocus", function()
-    hs.osascript.applescriptFromFile("dagliglogg-to-omnifocus.applescript")
+-- hs.hotkey.bind({"ctrl", "alt"}, "J", "Dagliglogg to OmniFocus", function()
+--    hs.osascript.applescriptFromFile("dagliglogg-to-omnifocus.applescript")
+-- end)
+-- Add logg note with duration to sqlite3 database
+hs.hotkey.bind({"ctrl", "alt"}, "J", "Dagliglogg to Sqlite3", function()
+    dagliglogg_ny()
 end)
 
 -- Save URL and title from Chrome/Safari to OmniFocus
