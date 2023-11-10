@@ -16,64 +16,94 @@ db_dagliglogg = hs.sqlite3.open(db_dagliglogg_file)
 db_dagliglogg:exec("CREATE TABLE IF NOT EXISTS " .. db_dagliglogg_table .. " (timestamp STRING, lengde INTEGER, text STRING)")
 -- db_dagliglogg:exec("INSERT INTO " .. db_dagliglogg_table .. " (timestamp, lengde, text) VALUES (DateTime(), 11, 'test1')")
 -- hs.fs.chdir(currdir)
-db_dagliglogg:close()
+-- db_dagliglogg:close()
 
 
 
 function dagliglogg_ny()
-    local respons, text, tmp1
-    db_dagliglogg = hs.sqlite3.open(db_dagliglogg_file)
-    respons, text = hs.dialog.textPrompt("Main message.", "Please enter something:", "Default Value", "OK", "Cancel")
+-- Finne siste basert på tidspunkt - erstatning for last_insert_rowid?
+-- select max(timestamp) from daglig 
+-- Kanskje putte teksten fra denne inn i bruker prompt
+    local respons, text, spaceindex, timeformat, lengde
+
+    previousapplication = hs.application.frontmostApplication()
+    previouswindow = previousapplication:focusedWindow()
+
+    -- db_dagliglogg = hs.sqlite3.open(db_dagliglogg_file)
+    -- hs.application.launchOrFocus("Hammerspoon")
+    hs.focus()
+    respons, text = hs.dialog.textPrompt("Daglig logg", "Hva har du gjort nå?", "Start gjerne med minutter.", "OK", "Cancel")
+    timestamp = os.date("%Y%m%d%H%M%S")
     if (respons == "OK") then
-        tmp1 = string.find(text, " ")
-        string.sub(text,tmp1-1,1)
-        4	4
-        
-        > string.sub(x,0,3) 
-        db_dagliglogg:exec("INSERT INTO " .. db_dagliglogg_table .. " (timestamp, lengde, text) VALUES (DateTime(), 0, '" .. text .. "')")
+        -- Remove all spaces in front and in end
+        text = all_trim(text)
+        uppertext = string.upper(text)
+        if (uppertext == 'STOPP') then
+            last_rowid = db_dagliglogg:last_insert_rowid()
+            if (last_rowid  ~= 0) then
+                local stmt = db_dagliglogg:prepare("SELECT timestamp FROM daglig WHERE ROWID = ?")
+                stmt:bind(1, last_rowid)
+                stmt:step()
+                local start = stmt:get_value(0)
+                stmt:finalize()
+                local diff = time_diff_in_minutes(start, timestamp)
+
+                db_dagliglogg:exec("UPDATE " .. db_dagliglogg_table .. " SET lengde = " .. diff .. " WHERE ROWID = " .. last_rowid .. " ")
+
+            else
+                local stmt = db_dagliglogg:prepare("SELECT max(timestamp) FROM daglig")
+                stmt:bind(1)
+                stmt:step()
+                local start = stmt:get_value(0)
+                stmt:finalize()
+                local diff = time_diff_in_minutes(start, timestamp)
+
+                db_dagliglogg:exec("UPDATE " .. db_dagliglogg_table .. " SET lengde = " .. diff .. " WHERE timestamp = '" .. start .. "' ")
+   
+
+                -- testCallbackFn = function(result) print("Callback Result: " .. result) end
+                -- hs.focus()
+                -- hs.dialog.alert(200, 200, testCallbackFn, "Daglig logg", "Last ROWID var 0 - ingen ting registrert", "OK")
+            end
+        elseif (uppertext == 'EXPORT') then
+            
+        else
+
+            firstspaceindex = string.find(text, " ")
+
+            -- Start with number
+            test1 = string.sub(text,1,1)
+            if (tonumber(test1) ~= nil) then
+                -- Is last char in first work 'm' or 't'?
+                timeformat = string.sub(text,firstspaceindex-1,firstspaceindex-1)
+                if (timeformat == 'm') then
+                    timeindex = 1
+                    spaceindex = firstspaceindex - 1
+                elseif (timeformat == 't') then
+                    timeindex = 60
+                    spaceindex = firstspaceindex - 1
+                -- Default til minutter
+                else
+                    timeindex = 1
+                end;
+                tidsforbruk = string.sub(text,1,spaceindex-1)
+                if (tonumber(tidsforbruk) ~= nil) then
+                    lengde = tidsforbruk * timeindex
+                else
+                    lengde = 0
+                end
+
+                text = string.sub(text,firstspaceindex+1)
+            else
+                -- Ingen tid angitt
+                lengde = 0
+            end;
+
+            db_dagliglogg:exec("INSERT INTO " .. db_dagliglogg_table .. " (timestamp, lengde, text) VALUES ('" .. timestamp .. "', " .. lengde .. ", '" .. text .. "')")
+            
+        end;
     end;
-    db_dagliglogg:close()
+    -- db_dagliglogg:close()
+
+    previouswindow:focus()
 end
-
--- Opens a file in read mode
---file = io.open("/Users/jon/Documents/Artsjakt/artsnavn.txt", "r")
---allearter=file:read("*a")
---file:close()
-
---function trim(s)
---   return s:match "^%s*(.-)%s*$"
---end
-
---local x, a, b = 1;
---while x < string.len(allearter) do
---  a, b = string.find(allearter, '.-\n', x);
---  if not a then
---    break;
---  else
---    choices[#choices+1]={["text"]=trim(string.sub(allearter,a,b))}
---  end;
---  x = b + 1;
---end;
-
---table.sort(choices, function(a,b) en=a["text"] to=b["text"] return en<to end )
-
---function sendTastDown()
---  hs.eventtap.keyStroke(nil,"down")
---end
---function sendTastEnter()
---  hs.eventtap.keyStroke(nil,"return")
---end
-
-
---chooser = hs.chooser.new(chooserFunction)
-
---chooser:showCallback(function() darktablewindow=hs.window.frontmostWindow()  end )
-
---function showChooser()
---  chooser:show()
---end
-
---chooser:searchSubText(true)
---chooser:choices(choices)
-
---hs.hotkey.bind({"ctrl", "alt"}, "B", "Artsnavn", showChooser)
