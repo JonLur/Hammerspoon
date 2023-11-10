@@ -41,7 +41,7 @@ require('cheatsheets')
 require('artsnavn')
 require('evoluent')
 require('battery')
--- require('dagliglogg')
+require('dagliglogg')
 --require('pomodoro')
 --require('simplemind')
 local hints = require "hs.hints"
