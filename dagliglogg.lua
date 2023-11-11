@@ -4,7 +4,8 @@
 -- text - string
 
 db_dagliglogg = nil
-db_dagliglogg_file = "/Users/jon/Documents/DagligLogg/dagliglogg.sqlite3"
+db_dagliglogg_directory = "/Users/jon/Documents/DagligLogg/"
+db_dagliglogg_file = "dagliglogg.sqlite3"
 db_dagliglogg_table = "daglig"
 
 -- sqlite3.open - open if exists - creates if not
@@ -12,7 +13,7 @@ db_dagliglogg_table = "daglig"
 -- db_dagliglogg = hs.sqlite3.open(db_dagliglogg_file)
 -- currdir = hs.fs.currentDir()
 -- result = hs.fs.chdir(db_dagliglogg_dir)
-db_dagliglogg = hs.sqlite3.open(db_dagliglogg_file)
+db_dagliglogg = hs.sqlite3.open(db_dagliglogg_directory .. db_dagliglogg_file)
 db_dagliglogg:exec("CREATE TABLE IF NOT EXISTS " .. db_dagliglogg_table .. " (timestamp STRING, lengde INTEGER, text STRING)")
 -- db_dagliglogg:exec("INSERT INTO " .. db_dagliglogg_table .. " (timestamp, lengde, text) VALUES (DateTime(), 11, 'test1')")
 -- hs.fs.chdir(currdir)
@@ -28,6 +29,40 @@ function get_last_time(db)
     stmt:finalize()
 
     return max_time
+end
+
+function get_report(db, periode, rapportfilnavn)
+    local output_file = db_dagliglogg_directory .. rapportfilnavn
+    local stmt = db:prepare("SELECT * FROM daglig WHERE timestamp > ?")
+    
+    if (hs.fs.displayName(output_file) ~= nil) then
+        os.remove(output_file)
+    end
+
+    stmt:bind(1,periode)
+    
+    -- Open the output file in append mode
+    local file = io.open(output_file, "a")
+
+    local line = string.format("%s\t%s\t%s\n", "Tidspunkt", "Lengde", "Tekst")
+    file:write(line)
+
+    -- Loop through the results and print them to the file
+    while stmt:step() == hs.sqlite3.ROW do
+        local timestamp = stmt:get_value(0)
+        local lengde = stmt:get_value(1)  -- replace 2 with the actual column index or name
+        local tekst = stmt:get_value(2)  -- replace 3 with the actual column index or name
+
+        -- Print or format the values as needed
+        local line = string.format("%s\t%s\t%s\n", timestamp, lengde, tekst)
+        file:write(line)
+    end
+
+    -- Close the file
+    file:close()
+
+    -- Finalize the statement
+    stmt:finalize()
 end
 
 function get_time_info(word)
@@ -79,11 +114,11 @@ end
 function dato_start(periode)
     local startpunkt = "FEIL"
 
-    if (periode == "EXPORT") then
+    if (periode == "EKSPORT") then
         startpunkt = os.date("%Y%m%d000000")
-    elseif (periode == "EXPORT DAG") then
+    elseif (periode == "EKSPORT DAG") then
         startpunkt = os.date("%Y%m%d000000")
-    elseif (periode == "EXPORT UKE") then
+    elseif (periode == "EKSPORT UKE") then
 -- Function to calculate the first day of the week
         local now = os.time()
         local currentDayOfWeek = tonumber(os.date("%w", now))
@@ -92,7 +127,7 @@ function dato_start(periode)
 -- Calculate the timestamp for the first day of the week
         local firstDayTimestamp = now - secondsUntilFirstDay
         startpunkt = os.date("%Y%m%d000000", firstDayTimestamp)
-    elseif (periode == "EXPORT MND") then
+    elseif (periode == "EKSPORT MND") then
         startpunkt = os.date("%Y%m01000000")
     end
 
@@ -105,7 +140,7 @@ function dagliglogg_ny()
 -- Kanskje putte teksten fra denne inn i bruker prompt
     local respons, beskrivelse, spaceindex, timeformat, lengde
 
-    db_dagliglogg = hs.sqlite3.open(db_dagliglogg_file)
+    db_dagliglogg = hs.sqlite3.open(db_dagliglogg_directory .. db_dagliglogg_file)
 
     previousapplication = hs.application.frontmostApplication()
     previouswindow = previousapplication:focusedWindow()
@@ -127,15 +162,23 @@ function dagliglogg_ny()
         elseif (uppertext == 'EKSPORT') then
 -- Eksporterer dagens dag til fil med dagensdato
             start = dato_start('EKSPORT')
+            rapportfilnavn = os.date("%Y%m%d.txt")
+            get_report(db_dagliglogg, start, rapportfilnavn)
         elseif (uppertext == 'EKSPORT DAG') then
 -- Eksporterer dagens dag til fil med dagensdato
             start = dato_start('EKSPORT DAG')
+            rapportfilnavn = os.date("%Y%m%d.txt")
+            get_report(db_dagliglogg, start, rapportfilnavn)
         elseif (uppertext == 'EKSPORT UKE') then
--- Eksporterer denne ukaa til fil med denne ukenr
+-- Eksporterer denne uka til fil med denne ukenr
             start = dato_start('EKSPORT UKE')
+            rapportfilnavn = os.date("%Yuke%W.txt")
+            get_report(db_dagliglogg, start, rapportfilnavn)
         elseif (uppertext == 'EKSPORT MND') then
--- Eksporterer denne ukaa til fil med denne måneder
+-- Eksporterer denne uka til fil med denne måneder
             start = dato_start('EKSPORT MND')
+            rapportfilnavn = os.date("%Ymnd%m.txt")
+            get_report(db_dagliglogg, start, rapportfilnavn)
         else
            oppgave(db_dagliglogg, current_time, beskrivelse) 
         end;
