@@ -30,46 +30,48 @@ function get_last_time(db)
     return max_time
 end
 
-function get_time_index(word)
+function get_time_info(word)
+-- If last char is number or different from m/t then timeindex = 1
     local length_word = string.len(word)
-    local timeformat = string.sub(word,length_word-1,length_word-1)
+    local timeformat = string.sub(word,length_word,length_word)
     local timeindex = 1
-    if (tonumber(timeformat) ~= nil) then
+    local time = 0
+    if (tonumber(timeformat) == nil) then
         if (timeformat == 'm') then
             timeindex = 1
-            spaceindex = first_word - 1
+            time = tonumber(string.sub(word,1,length_word-1))
         elseif (timeformat == 't') then
             timeindex = 60
-            spaceindex = first_word - 1
+            time = tonumber(string.sub(word,1,length_word-1))
         else
+-- timeformat is unknown character - then we set time to 0
             timeindex = 1
+            time = 0
         end
+    else
+-- timeformat is a number
+        time = tonumber(word)
     end
-    return timeindex
+    return time, timeindex
 end
 
-function oppgave(db)
+function oppgave(db, current_time, oppgave_text)
     local used_time = 0
-    local first_word_index = string.find(text, " ")
-    local first_word = string.sub(text,first_word_index-1,first_word_index-1)
+    local first_word_index = string.find(oppgave_text, " ")
+    local first_word = string.sub(oppgave_text,1,first_word_index-1)
 
     -- Start with number
-    local is_number = string.sub(text,1,1)
+    local is_number = string.sub(first_word,1,1)
+    print(is_number)
     if (tonumber(is_number) ~= nil) then
-        -- Is last char in first word 'm' or 't'?
-        local time_index = get_time_index(first_word)
-       
-        tidsforbruk = string.sub(text,1,spaceindex-1)
-        if (tonumber(tidsforbruk) ~= nil) then
-            used_time = tidsforbruk * timeindex
-        else
-            used_time = 0
-        end
 
-        text = string.sub(text,firstspaceindex+1)
+        local time, time_index = get_time_info(first_word)
+        used_time = time * time_index
+        text = string.sub(oppgave_text, first_word_index+1)
     else
         -- Ingen tid angitt
         used_time = 0
+        text = oppgave_text
     end;
 
     db:exec("INSERT INTO " .. db_dagliglogg_table .. " (timestamp, lengde, text) VALUES ('" .. current_time .. "', " .. used_time .. ", '" .. text .. "')")
@@ -80,15 +82,15 @@ function dagliglogg_ny()
 -- Finne siste basert på tidspunkt - erstatning for last_insert_rowid?
 -- select max(timestamp) from daglig 
 -- Kanskje putte teksten fra denne inn i bruker prompt
-    local respons, text, spaceindex, timeformat, lengde
+    local respons, beskrivelse, spaceindex, timeformat, lengde
+
+    db_dagliglogg = hs.sqlite3.open(db_dagliglogg_file)
 
     previousapplication = hs.application.frontmostApplication()
     previouswindow = previousapplication:focusedWindow()
 
-    -- db_dagliglogg = hs.sqlite3.open(db_dagliglogg_file)
-    -- hs.application.launchOrFocus("Hammerspoon")
     hs.focus()
-    respons, text = hs.dialog.textPrompt("Daglig logg", "Hva har du gjort nå?", "Start gjerne med minutter.", "OK", "Cancel")
+    respons, beskrivelse = hs.dialog.textPrompt("Daglig logg", "Hva har du gjort nå?", "Start gjerne med minutter.", "OK", "Cancel")
     
     local current_time = os.date("%Y%m%d%H%M%S")
     local last_time = get_last_time(db_dagliglogg)
@@ -96,17 +98,21 @@ function dagliglogg_ny()
 
     if (respons == "OK") then
         -- Remove all spaces in front and in end
-        text = all_trim(text)
-        uppertext = string.upper(text)
+        local beskrivelse = all_trim(beskrivelse)
+        local uppertext = string.upper(beskrivelse)
+
         if (uppertext == 'STOPP') then
             db_dagliglogg:exec("UPDATE " .. db_dagliglogg_table .. " SET lengde = " .. used_time .. " WHERE timestamp = '" .. last_time .. "' ")
         elseif (uppertext == 'EXPORT') then
-            
+        elseif (uppertext == 'EXPORT DAG') then
+        elseif (uppertext == 'EXPORT UKE') then
+        elseif (uppertext == 'EXPORT MND') then
         else
-           oppgave(db_dagliglogg) 
+           oppgave(db_dagliglogg, current_time, beskrivelse) 
         end;
     end;
-    -- db_dagliglogg:close()
+
+    db_dagliglogg:close()
 
     previouswindow:focus()
 end
