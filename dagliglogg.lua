@@ -62,7 +62,6 @@ function oppgave(db, current_time, oppgave_text)
 
     -- Start with number
     local is_number = string.sub(first_word,1,1)
-    print(is_number)
     if (tonumber(is_number) ~= nil) then
 
         local time, time_index = get_time_info(first_word)
@@ -77,6 +76,28 @@ function oppgave(db, current_time, oppgave_text)
     db:exec("INSERT INTO " .. db_dagliglogg_table .. " (timestamp, lengde, text) VALUES ('" .. current_time .. "', " .. used_time .. ", '" .. text .. "')")
 end
 
+function dato_start(periode)
+    local startpunkt = "FEIL"
+
+    if (periode == "EXPORT") then
+        startpunkt = os.date("%Y%m%d000000")
+    elseif (periode == "EXPORT DAG") then
+        startpunkt = os.date("%Y%m%d000000")
+    elseif (periode == "EXPORT UKE") then
+-- Function to calculate the first day of the week
+        local now = os.time()
+        local currentDayOfWeek = tonumber(os.date("%w", now))
+-- Calculate seconds until the first day of the week (Monday)
+        local secondsUntilFirstDay = (currentDayOfWeek - 1) * 24 * 60 * 60
+-- Calculate the timestamp for the first day of the week
+        local firstDayTimestamp = now - secondsUntilFirstDay
+        startpunkt = os.date("%Y%m%d000000", firstDayTimestamp)
+    elseif (periode == "EXPORT MND") then
+        startpunkt = os.date("%Y%m01000000")
+    end
+
+    return startpunkt
+end
 
 function dagliglogg_ny()
 -- Finne siste basert på tidspunkt - erstatning for last_insert_rowid?
@@ -103,10 +124,18 @@ function dagliglogg_ny()
 
         if (uppertext == 'STOPP') then
             db_dagliglogg:exec("UPDATE " .. db_dagliglogg_table .. " SET lengde = " .. used_time .. " WHERE timestamp = '" .. last_time .. "' ")
-        elseif (uppertext == 'EXPORT') then
-        elseif (uppertext == 'EXPORT DAG') then
-        elseif (uppertext == 'EXPORT UKE') then
-        elseif (uppertext == 'EXPORT MND') then
+        elseif (uppertext == 'EKSPORT') then
+-- Eksporterer dagens dag til fil med dagensdato
+            start = dato_start('EKSPORT')
+        elseif (uppertext == 'EKSPORT DAG') then
+-- Eksporterer dagens dag til fil med dagensdato
+            start = dato_start('EKSPORT DAG')
+        elseif (uppertext == 'EKSPORT UKE') then
+-- Eksporterer denne ukaa til fil med denne ukenr
+            start = dato_start('EKSPORT UKE')
+        elseif (uppertext == 'EKSPORT MND') then
+-- Eksporterer denne ukaa til fil med denne måneder
+            start = dato_start('EKSPORT MND')
         else
            oppgave(db_dagliglogg, current_time, beskrivelse) 
         end;
