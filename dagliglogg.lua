@@ -52,9 +52,10 @@ function dagliglogg_ny()
 
             else
                 local stmt = db_dagliglogg:prepare("SELECT max(timestamp) FROM daglig")
-                stmt:bind(1,1)
                 stmt:step()
                 local start = stmt:get_value(0)
+                print(start)
+                print(timestamp)
                 stmt:finalize()
                 local diff = time_diff_in_minutes(start, timestamp)
 
