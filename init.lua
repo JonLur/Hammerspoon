@@ -66,8 +66,10 @@ require('dagliglogg')
 --- require('simplemind')
 
 if (serial_number == "C02DW1QNQ6L5" ) then
+  print("Laster hjemmemaskin")
   require('hjemmemaskin')
 elseif (serial_number == "C02G945EQ6LR") then
+  print("Laster jobbmaskin")
   require('jobbmaskin')
 end
 
