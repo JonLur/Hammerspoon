@@ -1,3 +1,11 @@
+-------------------------
+-- Hammerspoon config
+-- File: dagliglogg.lua
+-- Author: Jon Lurås
+-- Date: 2023.11.12
+-- Version: 2.0
+------------------------
+
 -- Database format:
 -- timestamp - YYYYMMDDHHMMSS
 -- lengde - integer hentet fra starten av tekst som er lagt inn eller via en STOPP kommando
