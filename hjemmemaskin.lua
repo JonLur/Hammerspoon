@@ -92,29 +92,17 @@ hs.hotkey.bind({"ctrl", "alt"}, "T", "SimpleMind", function()
     hs.application.launchOrFocus("SimpleMind Pro")
 end)
 
--- Run iTerm
-hs.hotkey.bind({"ctrl", "alt"}, "I", "iTerm2", function()
-    hs.application.launchOrFocus("iTerm")
-    watcher:start()
-end)
-
 -- Run GitKraken
 hs.hotkey.bind({"ctrl", "alt"}, "K", "GitKraken", function()
     hs.application.launchOrFocus("GitKraken")
     watcher:start()
 end)
 
--- Run PreView
-hs.hotkey.bind({"ctrl", "alt"}, "P", "PreView", function()
-    hs.application.launchOrFocus("Preview")
+-- Run Final Cut Pro
+hs.hotkey.bind({"ctrl", "alt", "cmd"}, "F", "Final Cut Pro", function()
+    hs.application.launchOrFocus("Final Cut Pro")
     watcher:start()
 end)
-
--- Run Final Cut Pro
---hs.hotkey.bind({"ctrl", "alt"}, "F", "Final Cut Pro", function()
---    hs.application.launchOrFocus("Final Cut Pro")
---    watcher:start()
---end)
 
 -- Kopier
 hs.hotkey.bind({"ctrl", "alt"}, "V", "Copy pasteboard", function()
