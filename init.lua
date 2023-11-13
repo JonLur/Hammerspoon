@@ -100,7 +100,7 @@ hs.hotkey.bind({"ctrl", "alt"}, "H", "Copy selected to OmniFocus", function()
 end)
 
 -- Add note to OmniFocus
-hs.hotkey.bind({"ctrl", "alt"}, "N", "Note to last modified task OmniFocus", function()
+hs.hotkey.bind({"ctrl", "alt","cmd"}, "U", "Note to last modified task OmniFocus", function()
   hs.osascript.applescriptFromFile("omnifocus-note.applescript")
 end)
 
