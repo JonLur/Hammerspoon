@@ -3,7 +3,7 @@
 -- File: dagliglogg.lua
 -- Author: Jon Lurås
 -- Date: 2023.11.12
--- Version: 2.0
+-- Version: 2.0.2
 ------------------------
 
 -- Database format:
@@ -84,7 +84,7 @@ function get_report(db, periode, rapportfilnavn)
     end
 
     -- Write headers
-    local header_line = string.format("%s\t%s\t%s\n", "Tidspunkt", "Lengde", "Tekst")
+    local header_line = string.format("%s\t\t%s\t%s\n", "Tidspunkt", "Lengde", "Tekst")
     local write_success, write_error = file:write(header_line)
     if not write_success then
         -- Handle the error (e.g., print an error message, log, or throw an exception)
@@ -96,7 +96,7 @@ function get_report(db, periode, rapportfilnavn)
 
     -- Loop through the results and print them to the file
     while stmt:step() == hs.sqlite3.ROW do
-        local timestamp = stmt:get_value(0) -- timestamp
+        local timestamp = os.date("%Y.%m.%d %H:%M",os.time(time_from_string(stmt:get_value(0)))) -- timestamp
         local lengde = stmt:get_value(1)  -- lengde
         local tekst = stmt:get_value(2)  -- tekst
 
@@ -110,7 +110,7 @@ function get_report(db, periode, rapportfilnavn)
         end
 
         -- Print or format the values as needed
-        local line = string.format("%s\t%s\t%s\n", timestamp, lengde, tekst)
+        local line = string.format("%s\t%5sm\t%s\n", timestamp, lengde, tekst)
         write_success, write_error = file:write(line)
         if not write_success then
             -- Handle the error (e.g., print an error message, log, or throw an exception)
@@ -180,11 +180,11 @@ end
 function dato_start(periode)
     local startpunkt = nil
 
-    if (periode == "EKSPORT") then
+    if (periode == "EXPORT") then
         startpunkt = os.date("%Y%m%d000000")
-    elseif (periode == "EKSPORT DAG") then
+    elseif (periode == "EXPORT DAG") then
         startpunkt = os.date("%Y%m%d000000")
-    elseif (periode == "EKSPORT UKE") then
+    elseif (periode == "EXPORT UKE") then
 -- Function to calculate the first day of the week
         local now = os.time()
         local currentDayOfWeek = tonumber(os.date("%w", now))
@@ -203,7 +203,7 @@ function dato_start(periode)
             return nil
         end
         startpunkt = os.date("%Y%m%d000000", firstDayTimestamp)
-    elseif (periode == "EKSPORT MND") then
+    elseif (periode == "EXPORT MND") then
         startpunkt = os.date("%Y%m01000000")
     else
         print("Unknown periode:", periode)
@@ -244,9 +244,9 @@ function dagliglogg_ny()
 
         if (uppertext == 'STOPP') then
             db_dagliglogg:exec("UPDATE " .. db_dagliglogg_table .. " SET lengde = " .. used_time .. " WHERE timestamp = '" .. last_time .. "' ")
-        elseif (uppertext == 'EKSPORT') then
+        elseif (uppertext == 'EXPORT') then
 -- Eksporterer dagens dag til fil med dagensdato
-            start = dato_start('EKSPORT')
+            start = dato_start('EXPORT')
             if not start then
                 print("Error:", "Feil med dato_start")
             end
@@ -255,9 +255,9 @@ function dagliglogg_ny()
             if not success then
                 print("Error:", error_message)
             end
-        elseif (uppertext == 'EKSPORT DAG') then
+        elseif (uppertext == 'EXPORT DAG') then
 -- Eksporterer dagens dag til fil med dagensdato
-            start = dato_start('EKSPORT DAG')
+            start = dato_start('EXPORT DAG')
             if not start then
                 print("Error:", "Feil med dato_start")
             end
@@ -266,9 +266,9 @@ function dagliglogg_ny()
             if not success then
                 print("Error:", error_message)
             end
-        elseif (uppertext == 'EKSPORT UKE') then
+        elseif (uppertext == 'EXPORT UKE') then
 -- Eksporterer denne uka til fil med denne ukenr
-            start = dato_start('EKSPORT UKE')
+            start = dato_start('EXPORT UKE')
             if not start then
                 print("Error:", "Feil med dato_start")
             end
@@ -277,9 +277,9 @@ function dagliglogg_ny()
             if not success then
                 print("Error:", error_message)
             end
-        elseif (uppertext == 'EKSPORT MND') then
+        elseif (uppertext == 'EXPORT MND') then
 -- Eksporterer denne uka til fil med denne måneder
-            start = dato_start('EKSPORT MND')
+            start = dato_start('EXPORT MND')
             if not start then
                 print("Error:", "Feil med dato_start")
             end
