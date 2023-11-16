@@ -4,7 +4,7 @@
 -- Author: Jon Lurås
 -- Date: 2023.11.12
 -- Endret: 2023.11.16
--- Version: 2.0.4
+-- Version: 2.0.5
 ------------------------
 
 -- Database format:
@@ -266,6 +266,11 @@ function dagliglogg_ny()
     end
 
     lasttext = get_last_text(db_dagliglogg, last_time)
+    if not lasttext then
+        print("Error:", errormessage)
+        db_dagliglogg:close()
+        return 
+    end
     local stamp = os.date("%H:%M",os.time(time_from_string(last_time)))
 
     hs.focus()
