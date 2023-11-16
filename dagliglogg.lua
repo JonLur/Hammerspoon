@@ -3,7 +3,8 @@
 -- File: dagliglogg.lua
 -- Author: Jon Lurås
 -- Date: 2023.11.12
--- Version: 2.0.2
+-- Endret: 2023.11.16
+-- Version: 2.0.4
 ------------------------
 
 -- Database format:
@@ -56,6 +57,38 @@ function get_last_time(db)
     stmt:finalize()  -- Finalize the statement after successful execution
 
     return lasttime
+end
+
+function get_last_text(db, lasttime)
+    local stmt = db:prepare("SELECT text FROM daglig WHERE timestamp = " .. lasttime )
+
+    if not stmt then
+        -- Handle the error (e.g., print an error message, log, or throw an exception)
+        print("Error preparing SQL statement")
+        return nil, "Error preparing SQL statement"
+    end
+
+    local success = stmt:step()
+
+    if not success then
+        -- Handle the error (e.g., print an error message, log, or throw an exception)
+        print("Error executing SQL statement")
+        stmt:finalize()  -- Ensure to finalize the statement in case of an error
+        return nil, "Error executing SQL statement"
+    end
+
+    local lasttext = stmt:get_value(0)
+
+    if not lasttext then
+        -- Handle the error (e.g., print an error message, log, or throw an exception)
+        print("Error retrieving value from the result set")
+        stmt:finalize()  -- Ensure to finalize the statement in case of an error
+        return nil, "Error retrieving value from the result set"
+    end
+
+    stmt:finalize()  -- Finalize the statement after successful execution
+
+    return lasttext
 end
 
 
@@ -224,9 +257,6 @@ function dagliglogg_ny()
     previousapplication = hs.application.frontmostApplication()
     previouswindow = previousapplication:focusedWindow()
 
-    hs.focus()
-    respons, beskrivelse = hs.dialog.textPrompt("Daglig logg", "Hva har du gjort nå?", "Start gjerne med minutter.", "OK", "Cancel")
-    
     local current_time = os.date("%Y%m%d%H%M%S")
     local last_time, errormessage = get_last_time(db_dagliglogg)
     if not last_time then
@@ -234,6 +264,12 @@ function dagliglogg_ny()
         db_dagliglogg:close()
         return 
     end
+
+    lasttext = get_last_text(db_dagliglogg, last_time)
+    local stamp = os.date("%H:%M",os.time(time_from_string(last_time)))
+
+    hs.focus()
+    respons, beskrivelse = hs.dialog.textPrompt("Daglig logg", "Siste er " .. stamp .. ": " .. lasttext, "Start gjerne med minutter.", "OK", "Cancel")
 
     local used_time = time_diff_in_minutes(last_time, current_time)
 
