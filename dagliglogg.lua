@@ -4,7 +4,7 @@
 -- Author: Jon Lurås
 -- Date: 2023.11.12
 -- Endret: 2023.11.17
--- Version: 2.0.6
+-- Version: 2.0.7
 ------------------------
 
 -- Database format:
@@ -101,8 +101,9 @@ function get_last_lengde_text(db, lasttime)
 end
 
 
-function get_report(db, periode, rapportfilnavn)
+function get_report(db, periode, periodesummering, rapportfilnavn)
     local outputfile = db_dagliglogg_directory .. rapportfilnavn
+    local totalsum = 0
  
     if (hs.fs.displayName(outputfile) ~= nil) then
         os.remove(outputfile)
@@ -151,8 +152,28 @@ function get_report(db, periode, rapportfilnavn)
             return false, "Error retrieving values from the result set"
         end
 
+        if (periodesummering) then
+            totalsum = totalsum + lengde
+        end
+
         -- Print or format the values as needed
         local line = string.format("%s\t%5sm\t%s\n", timestamp, lengde, tekst)
+        write_success, write_error = file:write(line)
+        if not write_success then
+            -- Handle the error (e.g., print an error message, log, or throw an exception)
+            print("Error writing line to the file:", write_error)
+            file:close()  -- Ensure to close the file in case of an error
+            stmt:finalize()  -- Ensure to finalize the statement in case of an error
+            return false, "Error writing line to the file: " .. write_error
+        end
+    end
+
+    if (periodesummering) then
+        -- Print or format the values as needed
+        local min = totalsum % 60
+        local timer = (totalsum-min) / 60
+        sum = string.format("%d:%d", timer, min)
+        local line = string.format("%s\t\t\t%5st\t%s\n", "Totalt", sum, "")
         write_success, write_error = file:write(line)
         if not write_success then
             -- Handle the error (e.g., print an error message, log, or throw an exception)
@@ -311,8 +332,9 @@ function dagliglogg_ny()
             if not start then
                 print("Error:", "Feil med dato_start")
             end
+            local rapportsummering = true
             rapportfilnavn = os.date("%Y%m%d.txt")
-            local success, error_message = get_report(db_dagliglogg, start, rapportfilnavn)
+            local success, error_message = get_report(db_dagliglogg, start, rapportsummering, rapportfilnavn)
             if not success then
                 print("Error:", error_message)
             end
@@ -322,8 +344,9 @@ function dagliglogg_ny()
             if not start then
                 print("Error:", "Feil med dato_start")
             end
+            local rapportsummering = true
             rapportfilnavn = os.date("%Y%m%d.txt")
-            local success, error_message = get_report(db_dagliglogg, start, rapportfilnavn)
+            local success, error_message = get_report(db_dagliglogg, start, rapportsummering, rapportfilnavn)
             if not success then
                 print("Error:", error_message)
             end
@@ -333,8 +356,9 @@ function dagliglogg_ny()
             if not start then
                 print("Error:", "Feil med dato_start")
             end
+            local rapportsummering = false
             rapportfilnavn = os.date("%Yuke%W.txt")
-            local success, error_message = get_report(db_dagliglogg, start, rapportfilnavn)
+            local success, error_message = get_report(db_dagliglogg, start, rapportsummering, rapportfilnavn)
             if not success then
                 print("Error:", error_message)
             end
@@ -344,8 +368,9 @@ function dagliglogg_ny()
             if not start then
                 print("Error:", "Feil med dato_start")
             end
+            local rapportsummering = false
             rapportfilnavn = os.date("%Ymnd%m.txt")
-            local success, error_message = get_report(db_dagliglogg, start, rapportfilnavn)
+            local success, error_message = get_report(db_dagliglogg, start, rapportsummering, rapportfilnavn)
             if not success then
                 print("Error:", error_message)
             end
