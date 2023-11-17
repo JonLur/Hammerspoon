@@ -3,8 +3,8 @@
 -- File: dagliglogg.lua
 -- Author: Jon Lurås
 -- Date: 2023.11.12
--- Endret: 2023.11.16
--- Version: 2.0.5
+-- Endret: 2023.11.17
+-- Version: 2.0.6
 ------------------------
 
 -- Database format:
@@ -59,8 +59,8 @@ function get_last_time(db)
     return lasttime
 end
 
-function get_last_text(db, lasttime)
-    local stmt = db:prepare("SELECT text FROM daglig WHERE timestamp = " .. lasttime )
+function get_last_lengde_text(db, lasttime)
+    local stmt = db:prepare("SELECT lengde, text FROM daglig WHERE timestamp = " .. lasttime )
 
     if not stmt then
         -- Handle the error (e.g., print an error message, log, or throw an exception)
@@ -77,7 +77,16 @@ function get_last_text(db, lasttime)
         return nil, "Error executing SQL statement"
     end
 
-    local lasttext = stmt:get_value(0)
+
+    local lastlengde = stmt:get_value(0)
+    if not lastlengde then
+        -- Handle the error (e.g., print an error message, log, or throw an exception)
+        print("Error retrieving value from the result set")
+        stmt:finalize()  -- Ensure to finalize the statement in case of an error
+        return nil, "Error retrieving value from the result set"
+    end
+
+    local lasttext = stmt:get_value(1)
 
     if not lasttext then
         -- Handle the error (e.g., print an error message, log, or throw an exception)
@@ -88,7 +97,7 @@ function get_last_text(db, lasttime)
 
     stmt:finalize()  -- Finalize the statement after successful execution
 
-    return lasttext
+    return lastlengde, lasttext
 end
 
 
@@ -265,16 +274,27 @@ function dagliglogg_ny()
         return 
     end
 
-    lasttext = get_last_text(db_dagliglogg, last_time)
+    lastlengde, lasttext = get_last_lengde_text(db_dagliglogg, last_time)
+    if not lastlengde then
+        print("Error:", errormessage)
+        db_dagliglogg:close()
+        return 
+    end
     if not lasttext then
         print("Error:", errormessage)
         db_dagliglogg:close()
         return 
     end
+
     local stamp = os.date("%H:%M",os.time(time_from_string(last_time)))
 
     hs.focus()
-    respons, beskrivelse = hs.dialog.textPrompt("Daglig logg", "Siste er " .. stamp .. ": " .. lasttext, "Start gjerne med minutter.", "OK", "Cancel")
+    if (lastlengde == 0) then
+        statustext = "Siste er " .. stamp .. ": " .. lasttext
+    else
+        statustext = "Hva skjer?"
+    end
+    respons, beskrivelse = hs.dialog.textPrompt("Daglig logg", statustext, "Start gjerne med minutter.", "OK", "Cancel")
 
     local used_time = time_diff_in_minutes(last_time, current_time)
 
