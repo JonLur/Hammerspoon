@@ -4,7 +4,7 @@
 -- Author: Jon Lurås
 -- Date: 2023.11.12
 -- Endret: 2023.11.19
--- Version: 2.0.8
+-- Version: 2.0.9
 ------------------------
 
 kommandoer = "EXPORT STOPP"
