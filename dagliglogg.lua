@@ -4,7 +4,7 @@
 -- Author: Jon Lurås
 -- Date: 2023.11.12
 -- Endret: 2023.11.19
--- Version: 2.0.9
+-- Version: 2.0.10
 ------------------------
 
 kommandoer = "EXPORT STOPP"
@@ -364,6 +364,7 @@ function dagliglogg_ny()
                     if not start then
                         print("Error:", "Feil med dato_start")
                     end
+                    stopp = os.date("%Y%m%d000000", sluttdato )
 -- Eksporterer dagens dag til fil med dagensdato
                     rapportsummering = true
                     rapportfilnavn = os.date("%Y%m%d.txt", fordato)
@@ -388,7 +389,7 @@ function dagliglogg_ny()
                     start = os.date("%Y%m%d000000", startdato )
                     stopp = os.date("%Y%m%d000000", stoppdato )
                     local rapportsummering = false
-                    rapportfilnavn = os.date("%Yuke%W.txt")
+                    rapportfilnavn = os.date("%Yuke%W.txt", startdato)
                     local success, error_message = get_report(db_dagliglogg, start, stopp, rapportsummering, rapportfilnavn)
                     if not success then
                         print("Error:", error_message)
@@ -414,5 +415,7 @@ function dagliglogg_ny()
 
     db_dagliglogg:close()
 
-    previouswindow:focus()
+    if (previouswindow ~= nil) then
+        previouswindow:focus()
+    end
 end
