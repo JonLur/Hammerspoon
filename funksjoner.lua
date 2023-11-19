@@ -3,7 +3,8 @@
 -- File: funksjoner.lua
 -- Author: Jon Lurås
 -- Date: 2023.11.12
--- Version: 2.0
+-- Endret: 2023.11.19
+-- Version: 2.0.1
 ------------------------
 
 --- Support functions
@@ -115,4 +116,22 @@ function time_from_string(time)
   t1["sec"] = tonumber(string.sub(time,13,14))
 
   return t1
+end
+
+function getFirstDateOfWeek(year, week)
+
+  daysToTargetWeek = (week - 1) * 7
+
+  januaryFirst = os.time{year = year, month = 1, day = 1}
+  DateOfWeek = tonumber(os.date("%w", januaryFirst))
+  if ((DateOfWeek >= 1) and (DateOfWeek <= 4)) then
+    daysToFirstMonday = (DateOfWeek - 1) * (-1)
+    firstDateOfWeek = januaryFirst + ((daysToFirstMonday + daysToTargetWeek) * 24 * 60 * 60)
+  else
+    daysToFirstMonday = (8 - DateOfWeek) % 7
+    firstDateOfWeek = januaryFirst + ((daysToFirstMonday + daysToTargetWeek) * 24 * 60 * 60)
+  end
+
+  return firstDateOfWeek
+  
 end
