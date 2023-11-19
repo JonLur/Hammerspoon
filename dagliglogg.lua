@@ -347,10 +347,11 @@ function dagliglogg_ny()
         if (string.find(kommandoer, firstword) ~= nil ) then
             kontroll = true
         end
-
         if (kontroll) then
             if (firstword == 'STOPP') then
-                db_dagliglogg:exec("UPDATE " .. db_dagliglogg_table .. " SET lengde = " .. used_time .. " WHERE timestamp = '" .. last_time .. "' ")
+                if (lastlengde == 0) then
+                    db_dagliglogg:exec("UPDATE " .. db_dagliglogg_table .. " SET lengde = " .. used_time .. " WHERE timestamp = '" .. last_time .. "' ")
+                end
             elseif (firstword == 'EXPORT') then
                 if ((secondword == nil) or (dato) or (secondword == 'DAG')) then
                     if (dato) then
