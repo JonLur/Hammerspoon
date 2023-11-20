@@ -4,7 +4,7 @@
 -- Author: Jon Lurås
 -- Date: 2023.11.12
 -- Endret: 2023.11.19
--- Version: 2.0.10
+-- Version: 2.0.11
 ------------------------
 
 kommandoer = "EXPORT STOPP"
@@ -400,9 +400,19 @@ function dagliglogg_ny()
                     if not start then
                         print("Error:", "Feil med dato_start")
                     end
+                    local year = tonumber(os.date("%Y"))
+                    local month = tonumber(os.date("%m"))
+                    if (month < 12) then
+                        month = month + 1
+                    else
+                        year = year + 1
+                        month = 1
+                    end
+                    stopp = os.date("%Y%m%d000000", os.time({year = year, month = month, day = 1}))
                     local rapportsummering = false
                     rapportfilnavn = os.date("%Ymnd%m.txt")
-                    local success, error_message = get_report(db_dagliglogg, start, rapportsummering, rapportfilnavn)
+
+                    local success, error_message = get_report(db_dagliglogg, start, stopp, rapportsummering, rapportfilnavn)
                     if not success then
                         print("Error:", error_message)
                     end
