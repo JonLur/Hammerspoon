@@ -131,7 +131,7 @@ end)
 
 -- Add logg note with duration to sqlite3 database
 hs.hotkey.bind({"ctrl", "alt"}, "J", "Dagliglogg to Sqlite3", function()
-    dagliglogg_ny()
+  dagliglogg_ny()
 end)
 
 -- Save scpt as applescript to OmniFocus
