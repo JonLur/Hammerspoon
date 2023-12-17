@@ -9,102 +9,64 @@
 require('artsnavn')
 
 -- Run Mail, OmniFocus, Chrome, Skype, Teams, RDP
-hs.hotkey.bind({"ctrl", "alt"}, "A", "Standard åpninger", function()
+function StandardOpening ( AppNames )
+  return function()
     local skjermer = hs.screen.allScreens()
-    local win = hs.window.focusedWindow()
-    local sted = "hjemme"
 
-    print(skjermer[1])
-    print(skjermer[2])
-    print(skjermer[3])
+    for i, v in ipairs(AppNames) do
+      hs.application.launchOrFocus(v)
+    end
 
-    hs.application.launchOrFocus("OmniFocus")
-    hs.application.launchOrFocus("Google Chrome")
-
-    os.execute("sleep " .. tonumber(5))
-
-    if #skjermer == 1 then
-      sted = "MacbookAir"
-    elseif #skjermer == 2 then
-      if not (string.find(skjermer[2]:name(), "(un-named screen)") == nil) then
-        sted = "iPad"
-      elseif not (string.find(skjermer[2]:name(), "C34J79x") == nil) then
-        sted = "Halmhuset"
+    if #skjermer == 2 then
+      if not (string.find(skjermer[2]:name(), "C34J79x") == nil) then
+        application = hs.application.open("Google Chrome")
+        win = application:focusedWindow()
+        win:moveToScreen(skjermer[2], true)
+        win = nil
+        application = hs.application.open("OmniFocus")
+        win = application:focusedWindow()
+        win:moveToScreen(skjermer[1], true)
+        win = nil
       end
     end
-    print("Sted: " .. sted)
-
-   if sted == "iPad" then
-   elseif sted == "Halmhuset" then
-     hs.application.launchOrFocus("Google Chrome")
-     win = hs.window.focusedWindow()
-     win:moveToScreen(skjermer[2], true)
-     win = nil
-     hs.application.launchOrFocus("OmniFocus")
-     win = hs.window.focusedWindow()
-     win:moveToScreen(skjermer[1], true)
-     win = nil
-   elseif sted == "MacbookAir" then
-     hs.application.launchOrFocus("Google Chrome")
-     hs.application.launchOrFocus("OmniFocus")
-   end
-end)
-
---- Applications
--- Run Chrome
-hs.hotkey.bind({"ctrl", "alt"}, "C", "Chrome", function()
-    hs.application.launchOrFocus("Google Chrome")
-    watcher:start()
-end)
+  end
+end
 
 -- Run Chrome and open new tab for searching
-hs.hotkey.bind({"ctrl", "alt"}, "S", "Internet search", function()
+function InternetSearch ( AppName )
+  return function()
     hs.application.launchOrFocus("Google Chrome")
     hs.eventtap.keyStroke({"cmd"}, "T")
-end)
+  end
+end
 
--- Run Darktable
-hs.hotkey.bind({"ctrl", "alt"}, "D", "Darktable", function()
-    hs.application.launchOrFocus("darktable")
-    watcher:start()
-end)
+function CopyPasteboard ( Command )
+  return function()
+    if Command == "Paste" then
+      hs.eventtap.keyStrokes(hs.pasteboard.getContents())
+    end
+  end
+end
 
--- Run iA Writer
-hs.hotkey.bind({"ctrl", "alt"}, "W", "iA Writer", function()
-    hs.application.launchOrFocus("iA Writer")
-    watcher:start()
-end)
+--- Applications
+StandardStart = {"Google Chrome", "OmniFocus"}
+MyHotKeys = {}
+MyHotKeys[1] = {KeyCtrlAlt("C"), HelpText("Chrome"), ApplicationFocus("Google Chrome")}
+MyHotKeys[2] = {KeyCtrlAlt("D"), HelpText("Darktable"), ApplicationFocus("darktable")}
+MyHotKeys[3] = {KeyCtrlAlt("W"), HelpText("iA Writer"), ApplicationFocus("iA Writer")}
+MyHotKeys[4] = {KeyCtrlAlt("Z"), HelpText("zoom.u"), ApplicationFocus("zoom.u")}
+MyHotKeys[5] = {KeyCtrlAlt("M"), HelpText("Messenger"), ApplicationFocus("Messenger")}
+MyHotKeys[6] = {KeyCtrlAlt("T"), HelpText("SimpleMind"), ApplicationFocus("SimpleMind Pro")}
+MyHotKeys[7] = {KeyCtrlAlt("K"), HelpText("GitKraken"), ApplicationFocus("GitKraken")}
+MyHotKeys[8] = {KeyCtrlAlt("S"), HelpText("Internet search"), InternetSearch("Google Chrome")}
+MyHotKeys[9] = {KeyCtrlAlt("V"), HelpText("Copy pasteboard"), CopyPasteboard("Paste")}
+MyHotKeys[10] = {KeyCtrlAlt("A"), HelpText("Standard åpninger"), StandardOpening(StandardStart)}
 
--- Run Zoom
-hs.hotkey.bind({"ctrl", "alt"}, "Z", "zoom.us", function()
-    hs.application.launchOrFocus("zoom.us")
-    watcher:start()
-end)
-
--- Run Messenger
-hs.hotkey.bind({"ctrl", "alt"}, "M", "Messenger", function()
-    hs.application.launchOrFocus("Messenger")
-    watcher:start()
-end)
-
--- Run SimpleMind
-hs.hotkey.bind({"ctrl", "alt"}, "T", "SimpleMind", function()
-    hs.application.launchOrFocus("SimpleMind Pro")
-end)
-
--- Run GitKraken
-hs.hotkey.bind({"ctrl", "alt"}, "K", "GitKraken", function()
-    hs.application.launchOrFocus("GitKraken")
-    watcher:start()
-end)
-
--- Run Final Cut Pro
-hs.hotkey.bind({"ctrl", "alt", "cmd"}, "F", "Final Cut Pro", function()
-    hs.application.launchOrFocus("Final Cut Pro")
-    watcher:start()
-end)
-
--- Kopier
-hs.hotkey.bind({"ctrl", "alt"}, "V", "Copy pasteboard", function()
-  hs.eventtap.keyStrokes(hs.pasteboard.getContents())
-end)
+for i, v in ipairs(MyHotKeys) do
+  HotKey = v
+  array = {}
+  for j, w in ipairs(HotKey) do
+    array[j] = w
+  end
+  hs.hotkey.bind({"ctrl", "alt"}, array[1], array[2], array[3])
+end

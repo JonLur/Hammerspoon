@@ -16,61 +16,25 @@ spoon.WindowScreenLeftAndRight:bindHotkeys(spoon.WindowScreenLeftAndRight.defaul
 hs.loadSpoon("MouseCircle")
 spoon.MouseCircle:bindHotkeys({show={{"ctrl", "alt", "cmd"}, "M"}} )
 
--- hs.loadSpoon("SendToOmniFocus")
--- spoon.SendToOmniFocus.notifications = false
--- spoon.SendToOmniFocus:bindHotkeys({send_to_omnifocus={{"ctrl", "alt"}, "G"}})
-
--- hs.loadSpoon("SpoonInstall")
--- spoon.SpoonInstall.repos.skrypka = {
---   url = "https://github.com/skrypka/Spoons",
---   desc = "Skrypka's spoon repository",
--- }
--- spoon.SpoonInstall.use_syncinstall = true
--- spoon.SpoonInstall:andUse("PushToTalk", {
---  start = true,
---  config = {
---    app_switcher = { ['zoom.us'] = 'push-to-talk' }
---  }
--- })
-
--- hs.loadSpoon("DeepLTranslate")
--- spoon.DeepLTranslate:bindHotkeys({translate={{"ctrl", "alt"}, "E"}} )
-
--- hs.hotkey.bind({"ctrl", "alt"}, "E", "DeepLTranslate", function()
---   spoon.DeepLTranslate:translateSelectionPopup()
--- end)
--- spoon.PushToTalk.app_switcher = { ['zoom.us'] = 'push-to-talk' }
-
---- hs.loadSpoon("ToggleSkypeMute")
---- spoon.ToggleSkypeMute.bindHotkeys({{"ctrl", "alt"}, "Z"})
---- hs.hotkey.bind({"ctrl", "alt"}, "Z", "Skype mute", function()
----    spoon.ToggleSkypeMute.toggle("Skype for Business")
---- end)
+require('funksjoner')
+require('cheatsheets')
+require('evoluent')
+require('battery')
+require('dagliglogg')
 
 -- Get and print the serial number
 result, serial_number = hs.osascript.applescript("set serialNumber to do shell script \"system_profiler SPHardwareDataType | awk '/Serial/ {print $4}'\"")
 if not result then
   print("Error retrieving serialnumber")
   serial_number = nil
-end
-
-require('funksjoner')
-require('cheatsheets')
-require('evoluent')
-require('battery')
-require('dagliglogg')
---- require('jumpcut')
---- require('position')
---- require('hotkeys')
---- require('pomodoro')
---- require('simplemind')
-
-if (serial_number == "C02DW1QNQ6L5" ) then
-  print("Laster hjemmemaskin")
-  require('hjemmemaskin')
-elseif (serial_number == "C02G945EQ6LR") then
-  print("Laster jobbmaskin")
-  require('jobbmaskin')
+else
+  if (serial_number == "C02DW1QNQ6L5" ) then
+    print("Laster hjemmemaskin")
+    require('hjemmemaskin')
+  elseif (serial_number == "C02G945EQ6LR") then
+    print("Laster jobbmaskin")
+    require('jobbmaskin')
+  end
 end
 
 hints = require "hs.hints"
@@ -80,11 +44,18 @@ watcher = hs.application.watcher.new(applicationWatcher)
 
 
 --- Applications
--- Run OmniFocus
-hs.hotkey.bind({"ctrl", "alt"}, "O", "OmniFocus", function()
-    hs.application.launchOrFocus("OmniFocus")
-    watcher:start()
-end)
+MyHotKeys = {}
+MyHotKeys[1] = {KeyCtrlAlt("O"), HelpText("OmniFocus"), ApplicationFocus("OmniFocus")}
+MyHotKeys[2] = {KeyCtrlAlt("L"), HelpText("LastPass"), ApplicationFocus("LastPass")}
+MyHotKeys[3] = {KeyCtrlAlt("I"), HelpText("iTerm2"), ApplicationFocus("iTerm")}
+MyHotKeys[4] = {KeyCtrlAlt("P"), HelpText("PreView"), ApplicationFocus("PreView")}
+--MyHotKeys[5] = {KeyCtrlAlt("M"), HelpText("Messenger"), ApplicationFocus("Messenger")}
+--MyHotKeys[6] = {KeyCtrlAlt("T"), HelpText("SimpleMind"), ApplicationFocus("SimpleMind Pro")}
+--MyHotKeys[7] = {KeyCtrlAlt("K"), HelpText("GitKraken"), ApplicationFocus("GitKraken")}
+--MyHotKeys[8] = {KeyCtrlAlt("S"), HelpText("Internet search"), InternetSearch("Google Chrome")}
+--MyHotKeys[9] = {KeyCtrlAlt("V"), HelpText("Copy pasteboard"), CopyPasteboard("Paste")}
+
+
 
 hs.hotkey.bind({"ctrl", "alt"}, "F", "Search remaining in OmniFocus", function()
   app = hs.application.get("OmniFocus")
@@ -108,26 +79,6 @@ end)
 hs.hotkey.bind({"ctrl", "alt", "cmd"}, "S", "URL to OmniFocus", function()
 hs.osascript.applescriptFromFile("url-to-omnifocus.applescript")
 end)
-
--- Run LastPass
-hs.hotkey.bind({"ctrl", "alt"}, "L", "LastPass", function()
-    hs.application.launchOrFocus("LastPass")
-    watcher:start()
-end)
-
--- Run iTerm
-hs.hotkey.bind({"ctrl", "alt"}, "I", "iTerm2", function()
-    hs.application.launchOrFocus("iTerm")
-    watcher:start()
-end)
-
-
--- Run PreView
-hs.hotkey.bind({"ctrl", "alt"}, "P", "PreView", function()
-    hs.application.launchOrFocus("Preview")
-    watcher:start()
-end)
-
 
 -- Add logg note with duration to sqlite3 database
 hs.hotkey.bind({"ctrl", "alt"}, "J", "Dagliglogg to Sqlite3", function()

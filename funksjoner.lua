@@ -135,3 +135,18 @@ function getFirstDateOfWeek(year, week)
   return firstDateOfWeek
   
 end
+
+function HelpText ( AppName )
+  return AppName
+end
+
+function KeyCtrlAlt ( HotKey )
+  return HotKey
+end
+
+function ApplicationFocus ( AppName )
+  return function ()
+    hs.application.launchOrFocus( AppName)
+    watcher:start()
+  end
+end
