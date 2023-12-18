@@ -3,8 +3,8 @@
 -- File: funksjoner.lua
 -- Author: Jon Lurås
 -- Date: 2023.11.12
--- Endret: 2023.11.19
--- Version: 2.0.1
+-- Endret: 2023.12.18
+-- Version: 3.0.0
 ------------------------
 
 --- Support functions
@@ -140,13 +140,154 @@ function HelpText ( AppName )
   return AppName
 end
 
-function KeyCtrlAlt ( HotKey )
+function KeyHotKey ( HotKey )
   return HotKey
+end
+
+function KeyModifier ( Modifier )
+  if Modifier == "CtrlAlt" then
+    return {"ctrl", "alt"}
+  elseif Modifier == "CtrlAltCmd" then
+    return {"ctrl", "alt", "cmd"}
+  else
+    return nil
+  end
 end
 
 function ApplicationFocus ( AppName )
   return function ()
     hs.application.launchOrFocus( AppName)
     watcher:start()
+  end
+end
+
+-- Run Chrome and open new tab for searching
+function InternetSearch ( AppName )
+  return function()
+    hs.application.launchOrFocus( AppName )
+    hs.eventtap.keyStroke({"cmd"}, "T")
+  end
+end
+
+function CopyPasteboard ()
+  return function()
+    hs.eventtap.keyStrokes(hs.pasteboard.getContents())
+  end
+end
+
+function CopyPasteboardWork ()
+  return function()
+    local activeWindow, activeApplication
+    -- Set keyboard to UniCode - needed for Microsoft Remote Desktop
+    hs.eventtap.keyStroke({"ctrl", "cmd"}, "U")
+    activeWindow=hs.window.focusedWindow()
+    activeApplication=activeWindow:application()
+    hs.eventtap.keyStrokes(hs.pasteboard.getContents(),activeApplication)
+    -- hs.eventtap.keyStroke({}, "return")
+    -- Set keyboard to ScanCode - needed for Microsoft Remote Desktop
+    hs.eventtap.keyStroke({"ctrl", "cmd"}, "K")
+  end
+end
+
+function InOmniFocus ( Command )
+  return function()
+    if Command == "FindIn" then
+    -- Search remaining in OmniFocus
+      app = hs.application.get("OmniFocus")
+      app:activate()
+      app:selectMenuItem("Search Remaining")
+    elseif Command == "CopyTo" then
+      -- Add highlited to OmniFocus
+      hs.eventtap.keyStroke({"cmd"}, "C")
+      hs.eventtap.keyStroke({"ctrl", "alt"}, "space")
+      delayedPasteWithoutReturn()
+    elseif Command == "NoteTo" then
+      -- Add to last modified
+      hs.osascript.applescriptFromFile("omnifocus-note.applescript")
+    elseif Command == "URLTo" then
+      -- Save URL and title from Chrome/Safari to OmniFocus
+      hs.osascript.applescriptFromFile("url-to-omnifocus.applescript")
+    end
+  end
+end
+
+function ToDagliglogg ( Command )
+  return function()
+    if Command == "SendTo" then
+      -- Add logg note with duration to sqlite3 database
+      dagliglogg_ny()
+    end
+  end
+end
+
+function LockScreen ()
+  return function()
+    -- Lock screen
+    hs.caffeinate.startScreensaver()
+  end
+end
+
+function InsertDate ()
+  return function()
+    hs.eventtap.keyStrokes(os.date("%d.%m.%y %H:%M"))
+  end
+end
+
+function WindowHints ()
+  return function()
+    hints.style="vimperator"
+    hints.showTitleThresh=10
+    hints.windowHints(nil, centerMouseActiveWindow)
+  end
+end
+
+function imgKeyboardOption()
+  return function()
+    if not imgkeyboard then
+      mousepoint = hs.mouse.getAbsolutePosition()
+      imgkeyboard = hs.drawing.image(hs.geometry.rect(mousepoint.x,mousepoint.y,500,193), "Images/keyboard-with-option.png" )
+      imgkeyboard:show()
+    else
+      imgkeyboard:delete()
+      imgkeyboard = nil
+    end
+  end
+end
+
+
+function StandardOpening ( AppNamesMonitor )
+  return function()
+    if not (AppNames[1] == nil) then
+      local skjermer = hs.screen.allScreens()
+
+      for i, v in ipairs(AppNames) do
+        hs.application.launchOrFocus(v)
+      end
+
+      if #skjermer == 2 then
+        -- "C34J79x", "BenQ BL2400", "BenQ G2420HD", "PHL 272S4L" "(un-named screen)"
+        if not (string.find(skjermer[2]:name(), "C34J79x") == nil) then
+          for i, v in ipairs(AppNamesMonitor) do
+            App = v
+            array = {}
+            for j, w in ipairs(App) do
+              array[j] = w
+            end
+            if array[1] == "Lastpass" then
+              -- If Lastpass needs login it returns "nil"
+              application = hs.application.open(array[1])
+              win = application:focusedWindow()
+              if not (win == nil) then
+                win:moveToScreen(skjermer[array[2]], true)
+              end
+            else
+              application = hs.application.open(array[1])
+              win = application:focusedWindow()
+              win:moveToScreen(skjermer[array[2]], true)
+            end
+          end
+        end
+      end
+    end
   end
 end
