@@ -80,8 +80,18 @@ function centerMouseActiveWindow(window)
 end
 
 function all_trim(s)
-  return s:match"^%s*(.*)":match"(.-)%s*$"
+  return string.match( string.match(s, "^%s*(.*)"), "(.-)%s*$")
 end
+
+
+function left_trim(s)
+  return string.match(s, "^%s*(.*)")
+end
+
+function right_trim(s)
+  return string.match(s,"(.-)%s*$")
+end
+
 
 function time_diff_in_minutes(time1, time2)
 -- time1 and time2 needs to be in format YYYYMMDDHHMMSS
