@@ -119,32 +119,55 @@ function time_from_string(time)
 end
 
 function getFirstDateOfWeek(year, week)
-
-  daysToTargetWeek = (week - 1) * 7
-
-  januaryFirst = os.time{year = year, month = 1, day = 1}
-  DateOfWeek = tonumber(os.date("%w", januaryFirst))
-  if ((DateOfWeek >= 1) and (DateOfWeek <= 4)) then
-    daysToFirstMonday = (DateOfWeek - 1) * (-1)
-    firstDateOfWeek = januaryFirst + ((daysToFirstMonday + daysToTargetWeek) * 24 * 60 * 60)
+-- Aksepterer uke 0 og 54 og andre ikke gyldig ukenummer, men ser ut til å rapportere riktig på lovlige dager.
+  local daysToTargetWeek = (week - 1) * 7
+  local daysToFirstMonday = 0
+  local firstDateOfWeek = 0
+  local januaryFirst = os.time{year = year, month = 1, day = 1}
+  local DayOfWeek = tonumber(os.date("%w", januaryFirst))
+  if (DayOfWeek == 0) then
+    daysToFirstMonday = 1
+  elseif (DayOfWeek == 1) then
+    daysToFirstMonday = 0
+  elseif ((DayOfWeek > 1) and (DayOfWeek <= 4)) then
+    daysToFirstMonday = (DayOfWeek - 1) * (-1)
   else
-    daysToFirstMonday = (8 - DateOfWeek) % 7
-    firstDateOfWeek = januaryFirst + ((daysToFirstMonday + daysToTargetWeek) * 24 * 60 * 60)
+    daysToFirstMonday = 8 - DayOfWeek
   end
+
+  firstDateOfWeek = januaryFirst + ((daysToFirstMonday + daysToTargetWeek) * 24 * 60 * 60)
 
   return firstDateOfWeek
   
 end
 
-function HelpText ( AppName )
+
+function FirstDayOfThisWeek()
+  local now = os.time()
+  local currentDayOfWeek = os.date("%w", now)
+
+-- Calculate seconds until the first day of the week (Monday)
+  if currentDayOfWeek == 0 then
+      -- Sunday
+      currentDayOfWeek = 7
+  end
+
+  local secondsUntilFirstDay = (currentDayOfWeek - 1) * 60 * 60 * 24
+  local firstDayTimestamp = now - secondsUntilFirstDay
+  
+  return os.date("%Y%m%d000000", firstDayTimestamp)
+end
+
+
+function HelpText( AppName )
   return AppName
 end
 
-function KeyHotKey ( HotKey )
+function KeyHotKey( HotKey )
   return HotKey
 end
 
-function KeyModifier ( Modifier )
+function KeyModifier( Modifier )
   if Modifier == "CtrlAlt" then
     return {"ctrl", "alt"}
   elseif Modifier == "CtrlAltCmd" then
@@ -154,7 +177,7 @@ function KeyModifier ( Modifier )
   end
 end
 
-function ApplicationFocus ( AppName )
+function ApplicationFocus( AppName )
   return function ()
     hs.application.launchOrFocus( AppName)
     watcher:start()
@@ -162,20 +185,20 @@ function ApplicationFocus ( AppName )
 end
 
 -- Run Chrome and open new tab for searching
-function InternetSearch ( AppName )
+function InternetSearch( AppName )
   return function()
     hs.application.launchOrFocus( AppName )
     hs.eventtap.keyStroke({"cmd"}, "T")
   end
 end
 
-function CopyPasteboard ()
+function CopyPasteboard()
   return function()
     hs.eventtap.keyStrokes(hs.pasteboard.getContents())
   end
 end
 
-function CopyPasteboardWork ()
+function CopyPasteboardWork()
   return function()
     local activeWindow, activeApplication
     -- Set keyboard to UniCode - needed for Microsoft Remote Desktop
@@ -189,7 +212,7 @@ function CopyPasteboardWork ()
   end
 end
 
-function InOmniFocus ( Command )
+function InOmniFocus( Command )
   return function()
     if Command == "FindIn" then
     -- Search remaining in OmniFocus
@@ -211,7 +234,7 @@ function InOmniFocus ( Command )
   end
 end
 
-function ToDagliglogg ( Command )
+function ToDagliglogg( Command )
   return function()
     if Command == "SendTo" then
       -- Add logg note with duration to sqlite3 database
@@ -220,20 +243,20 @@ function ToDagliglogg ( Command )
   end
 end
 
-function LockScreen ()
+function LockScreen()
   return function()
     -- Lock screen
     hs.caffeinate.startScreensaver()
   end
 end
 
-function InsertDate ()
+function InsertDate()
   return function()
     hs.eventtap.keyStrokes(os.date("%d.%m.%y %H:%M"))
   end
 end
 
-function WindowHints ()
+function WindowHints()
   return function()
     hints.style="vimperator"
     hints.showTitleThresh=10
@@ -255,13 +278,18 @@ function imgKeyboardOption()
 end
 
 
-function StandardOpening ( AppNamesMonitor )
+function StandardOpening( AppNamesMonitor )
   return function()
-    if not (AppNames[1] == nil) then
+    if not (AppNamesMonitor[1] == nil) then
       local skjermer = hs.screen.allScreens()
 
-      for i, v in ipairs(AppNames) do
-        hs.application.launchOrFocus(v)
+      for i, v in ipairs(AppNamesMonitor) do
+        App = v
+        array = {}
+        for j, w in ipairs(App) do
+          array[j] = w
+        end
+        hs.application.launchOrFocus(array[1])
       end
 
       if #skjermer == 2 then
@@ -273,16 +301,10 @@ function StandardOpening ( AppNamesMonitor )
             for j, w in ipairs(App) do
               array[j] = w
             end
-            if array[1] == "Lastpass" then
-              -- If Lastpass needs login it returns "nil"
-              application = hs.application.open(array[1])
-              win = application:focusedWindow()
-              if not (win == nil) then
-                win:moveToScreen(skjermer[array[2]], true)
-              end
-            else
-              application = hs.application.open(array[1])
-              win = application:focusedWindow()
+            application = hs.application.open(array[1])
+            win = application:focusedWindow()
+            if not (win == nil) then
+              -- When Lastpass needs login it returns "nil"
               win:moveToScreen(skjermer[array[2]], true)
             end
           end
@@ -291,3 +313,65 @@ function StandardOpening ( AppNamesMonitor )
     end
   end
 end
+
+
+function splitSentence(sentence)
+  local words = {}
+  local SplittFirstNWords = 2
+
+  local function splitHelper(str, nWords)
+      streng = ltrim(str)
+      local spaceIndex = string.find(streng, " ")
+
+      if spaceIndex then
+          local word = string.sub(streng, 1, spaceIndex - 1)
+          table.insert(words, word)
+          if nWords ~= #words then
+            splitHelper(string.sub(streng, spaceIndex + 1), nWords)
+          end
+      else
+          table.insert(words, streng)
+      end
+  end
+
+  setning = rtrim(sentence)
+
+  splitHelper(setning, SplittFirstNWords)
+
+  return words
+end
+
+function UpperAllText(TextArray)
+  local words = {}
+  local index = 1
+
+  local function ToUpper(a, n)
+    table.insert(words,string.upper(a[n]))
+    n = next(a, n)
+    if n ~= nil then
+      ToUpper(a, n)
+    end
+  end
+
+  ToUpper(TextArray, index)
+
+  return words
+end
+
+function ltrim(s)
+  local l = 1
+  while string.sub(s,l,l) == ' ' do
+    l = l+1
+  end
+  return string.sub(s,l,r)
+end
+
+function rtrim(s)
+  local l = 1
+  local r = string.len(s)
+  while string.sub(s,r,r) == ' ' do
+    r = r-1
+  end
+  return string.sub(s,l,r)
+end
+

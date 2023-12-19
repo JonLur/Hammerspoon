@@ -3,11 +3,11 @@
 -- File: dagliglogg.lua
 -- Author: Jon Lurås
 -- Date: 2023.11.12
--- Endret: 2023.11.19
--- Version: 2.0.11
+-- Endret: 2023.12.18
+-- Version: 3.0.0
 ------------------------
 
-kommandoer = "EXPORT STOPP"
+kommandoer = "STOPP EXPORT DAG UKE MND"
 
 -- Database format:
 -- timestamp - YYYYMMDDHHMMSS
@@ -242,39 +242,23 @@ function oppgave(db, current_time, oppgave_text)
     db:exec("INSERT INTO " .. db_dagliglogg_table .. " (timestamp, lengde, text) VALUES ('" .. current_time .. "', " .. used_time .. ", '" .. text .. "')")
 end
 
+
+
+
 function dato_start(periode)
     local startpunkt = nil
 
     if (periode == 'DAG') then
         startpunkt = os.date("%Y%m%d000000")
     elseif (periode == 'UKE') then
--- Function to calculate the first day of the week
-        local now = os.time()
-        local currentDayOfWeek = tonumber(os.date("%w", now))
-        if not currentDayOfWeek then
-            -- Handle the error (e.g., print an error message, log, or throw an exception)
-            print("Error calculating current day of the week")
-            return nil
-        end
--- Calculate seconds until the first day of the week (Monday)
-        local secondsUntilFirstDay = (currentDayOfWeek - 1) * 24 * 60 * 60
--- Calculate the timestamp for the first day of the week
-        local firstDayTimestamp = now - secondsUntilFirstDay
-        if not firstDayTimestamp then
-            -- Handle the error (e.g., print an error message, log, or throw an exception)
-            print("Error calculating first day timestamp")
-            return nil
-        end
-        startpunkt = os.date("%Y%m%d000000", firstDayTimestamp)
+        startpunkt = FirstDayOfThisWeek()
     elseif (periode == 'MND') then
         startpunkt = os.date("%Y%m01000000")
-    else
-        print("Unknown periode:", periode)
-        return nil
     end
 
     return startpunkt
 end
+
 
 function dagliglogg_ny()
 -- Finne siste basert på tidspunkt - erstatning for last_insert_rowid?
@@ -324,47 +308,51 @@ function dagliglogg_ny()
     local used_time = time_diff_in_minutes(last_time, current_time)
 
     if (respons == "OK") then
+        TekstInput = UpperAllText(splitSentence(beskrivelse))
         -- Remove all spaces in front and in end
         local firstword = nil
         local secondword = nil
         local beskrivelse = all_trim(beskrivelse)
         local uppertext = string.upper(beskrivelse)
-        if (string.find(uppertext,' ') ~= nil) then
-            firstword = string.sub(uppertext, 1, string.find(uppertext," ")-1)
-            secondword = string.sub(uppertext, string.find(uppertext," ")+1, string.len(uppertext))
-        else
-            firstword = uppertext
-        end
 
-        if (tonumber(secondword) ~= nil) then
-            if (string.len(secondword) == 6) then
-                ukenr = secondword
-            elseif (string.len(secondword) == 8) then
-                dato = secondword
-            end
-        end
 
-        if (string.find(kommandoer, firstword) ~= nil ) then
-            kontroll = true
-        end
-        if (kontroll) then
-            if (firstword == 'STOPP') then
+        if (string.find(kommandoer, TekstInput[1]) ~= nil ) then
+            if (TekstInput[1] == 'STOPP') then
                 if (lastlengde == 0) then
                     db_dagliglogg:exec("UPDATE " .. db_dagliglogg_table .. " SET lengde = " .. used_time .. " WHERE timestamp = '" .. last_time .. "' ")
                 end
-            elseif (firstword == 'EXPORT') then
-                if ((secondword == nil) or (dato) or (secondword == 'DAG')) then
-                    if (dato) then
-                        fordato = os.time(time_from_string(dato))
+            elseif (TekstInput[1] == 'EXPORT') then
+                if (string.find(kommandoer, TekstInput[2]) ~= nil ) or (tonumber(TekstInput[2]) ~= nil) or (TekstInput[2] == nil) then
+                    -- Lovlig kommando, tall eller ikke noe
+                    -- ikke noe er det samme som kommandoen 'DAG'
+                    if (TekstInput[2] == nil) or (TekstInput[2] == 'DAG') then
+                        now = os.time()
+                        start = os.date("%Y%m%d000000", now)
+                        stopp = os.date("%Y%m%d000000", now + (60*60*24))
+                        rapportsummering = true
+                        rapportfilnavn = os.date("%Y%m%d.txt", start)
+                    elseif (TekstInput[2] == 'UKE') then
+                        now = os.time()
+                        start = os.date("%Y%m%d000000", now)
+                        stopp = os.date("%Y%m%d000000", now + (60*60*24))
+                        rapportsummering = true
+                        rapportfilnavn = os.date("%Y%m%d.txt", start)
+                    elseif (TekstInput[2] == 'MND') then
+                        now = os.time()
+                        start = os.date("%Y%m%d000000", now)
+                        stopp = os.date("%Y%m%d000000", now + (60*60*24))
+                        rapportsummering = true
+                        rapportfilnavn = os.date("%Y%m%d.txt", start)
                     else
-                        fordato = os.time()
+                        -- Da er det nummer
+                        local n = string.len(TekstInput[2])
+                        if (n == 6) then
+                            ukenr = TekstInput[2]
+                        elseif (n == 8) then
+                            dato = TekstInput[2]
+                        end
                     end
-                    sluttdato = fordato + (60*60*24)
-                    start = os.date("%Y%m%d000000", fordato )
-                    if not start then
-                        print("Error:", "Feil med dato_start")
-                    end
-                    stopp = os.date("%Y%m%d000000", sluttdato )
+                end
 -- Eksporterer dagens dag til fil med dagensdato
                     rapportsummering = true
                     rapportfilnavn = os.date("%Y%m%d.txt", fordato)
