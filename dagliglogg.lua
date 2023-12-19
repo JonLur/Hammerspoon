@@ -315,96 +315,67 @@ function dagliglogg_ny()
         local beskrivelse = all_trim(beskrivelse)
         local uppertext = string.upper(beskrivelse)
 
-
         if (string.find(kommandoer, TekstInput[1]) ~= nil ) then
             if (TekstInput[1] == 'STOPP') then
                 if (lastlengde == 0) then
                     db_dagliglogg:exec("UPDATE " .. db_dagliglogg_table .. " SET lengde = " .. used_time .. " WHERE timestamp = '" .. last_time .. "' ")
                 end
             elseif (TekstInput[1] == 'EXPORT') then
-                if (string.find(kommandoer, TekstInput[2]) ~= nil ) or (tonumber(TekstInput[2]) ~= nil) or (TekstInput[2] == nil) then
+                if (TekstInput[2] == nil) or (string.find(kommandoer, TekstInput[2]) ~= nil ) or (tonumber(TekstInput[2]) ~= nil)  then
                     -- Lovlig kommando, tall eller ikke noe
                     -- ikke noe er det samme som kommandoen 'DAG'
+                    -- Sjekk mot nil må stå først, evaluering er fra venstre mot høyre. Kanskje skrives om?
                     if (TekstInput[2] == nil) or (TekstInput[2] == 'DAG') then
                         now = os.time()
                         start = os.date("%Y%m%d000000", now)
                         stopp = os.date("%Y%m%d000000", now + (60*60*24))
                         rapportsummering = true
-                        rapportfilnavn = os.date("%Y%m%d.txt", start)
+                        rapportfilnavn = os.date("%Y%m%d.txt")
                     elseif (TekstInput[2] == 'UKE') then
                         now = os.time()
-                        start = os.date("%Y%m%d000000", now)
-                        stopp = os.date("%Y%m%d000000", now + (60*60*24))
-                        rapportsummering = true
-                        rapportfilnavn = os.date("%Y%m%d.txt", start)
+                        start = FirstDayOfThisWeek()
+                        stopp = os.date("%Y%m%d000000",os.time(time_from_string(start)) + (60*60*24*7))
+                        rapportsummering = false
+                        rapportfilnavn = os.date("%Yuke%W.txt")
                     elseif (TekstInput[2] == 'MND') then
-                        now = os.time()
-                        start = os.date("%Y%m%d000000", now)
-                        stopp = os.date("%Y%m%d000000", now + (60*60*24))
-                        rapportsummering = true
-                        rapportfilnavn = os.date("%Y%m%d.txt", start)
+                        start = os.date("%Y%m01000000")
+                        local year = tonumber(os.date("%Y"))
+                        local month = tonumber(os.date("%m"))
+                        if (month == 12) then
+                            year = year + 1
+                            month = 1
+                        else
+                            month = month + 1
+                        end
+                        stopp = os.date("%Y%m%d000000", os.time({year = year, month = month, day = 1}))
+                        rapportsummering = false
+                        rapportfilnavn = os.date("%Ymnd%m.txt")
                     else
                         -- Da er det nummer
                         local n = string.len(TekstInput[2])
                         if (n == 6) then
                             ukenr = TekstInput[2]
+                            local time = getFirstDateOfWeek(string.sub(ukenr,1,4), string.sub(ukenr,5,6))
+                            start = os.date("%Y%m%d000000",time)
+                            stopp = os.date("%Y%m%d000000",time + (60*60*24*7))
+                            rapportsummering = true
+                            rapportfilnavn = os.date("%YUke%W.txt", time)
                         elseif (n == 8) then
                             dato = TekstInput[2]
+                            local time = os.time(time_from_string(dato))
+                            start = os.date("%Y%m%d000000", time)
+                            stopp = os.date("%Y%m%d000000", time + (60*60*24))
+                            rapportsummering = true
+                            rapportfilnavn = os.date("%Y%m%d.txt", time)
                         end
                     end
                 end
--- Eksporterer dagens dag til fil med dagensdato
-                    rapportsummering = true
-                    rapportfilnavn = os.date("%Y%m%d.txt", fordato)
-                    local success, error_message = get_report(db_dagliglogg, start, stopp, rapportsummering, rapportfilnavn)
-                    if not success then
-                        print("Error:", error_message)
-                    end
-                elseif ((secondword == 'UKE') or (ukenr)) then
--- Eksporterer denne uka til fil med denne ukenr
-                    if (ukenr) then
-                        startdato = getFirstDateOfWeek(string.sub(ukenr,1,4), string.sub(ukenr,5,6))
-                    else
-                        startdato = dato_start(secondword)
-                    end
-                    if not startdato then
-                        print("Error:", "Feil med dato_start")
-                    end
-                    stoppdato = startdato + (60*60*24*7)
-                    if not stoppdato then
-                        print("Error:", "Feil med dato_start")
-                    end
-                    start = os.date("%Y%m%d000000", startdato )
-                    stopp = os.date("%Y%m%d000000", stoppdato )
-                    local rapportsummering = false
-                    rapportfilnavn = os.date("%Yuke%W.txt", startdato)
-                    local success, error_message = get_report(db_dagliglogg, start, stopp, rapportsummering, rapportfilnavn)
-                    if not success then
-                        print("Error:", error_message)
-                    end
-                elseif (secondword == 'MND') then
--- Eksporterer denne uka til fil med denne måneder
-                    start = dato_start('MND')
-                    if not start then
-                        print("Error:", "Feil med dato_start")
-                    end
-                    local year = tonumber(os.date("%Y"))
-                    local month = tonumber(os.date("%m"))
-                    if (month < 12) then
-                        month = month + 1
-                    else
-                        year = year + 1
-                        month = 1
-                    end
-                    stopp = os.date("%Y%m%d000000", os.time({year = year, month = month, day = 1}))
-                    local rapportsummering = false
-                    rapportfilnavn = os.date("%Ymnd%m.txt")
 
-                    local success, error_message = get_report(db_dagliglogg, start, stopp, rapportsummering, rapportfilnavn)
-                    if not success then
-                        print("Error:", error_message)
-                    end
+                local success, error_message = get_report(db_dagliglogg, start, stopp, rapportsummering, rapportfilnavn)
+                if not success then
+                    print("Error:", error_message)
                 end
+                
             end
         else
             oppgave(db_dagliglogg, current_time, beskrivelse) 

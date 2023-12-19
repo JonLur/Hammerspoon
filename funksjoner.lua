@@ -144,7 +144,7 @@ end
 
 function FirstDayOfThisWeek()
   local now = os.time()
-  local currentDayOfWeek = os.date("%w", now)
+  local currentDayOfWeek = os.date("%w")
 
 -- Calculate seconds until the first day of the week (Monday)
   if currentDayOfWeek == 0 then
