@@ -168,6 +168,34 @@ function FirstDayOfThisWeek()
   return os.date("%Y%m%d000000", firstDayTimestamp)
 end
 
+function FirstDayOfWeekInSeconds( ostime )
+  -- Just handle norwegian calendar. Monday is first day of week
+  local DayOfWeek = os.date("%w", ostime)
+  if DayOfWeek == 0 then
+    DayOfWeek = 7
+  end
+
+  local secondsUntilFirstDay = (DayOfWeek - 1) * 60 * 60 * 24
+  local firstDayTimestamp = ostime - secondsUntilFirstDay
+  local FirstDayOfWeek = os.date("*t", firstDayTimestamp)
+  FirstDayOfWeek["hour"] = 0
+  FirstDayOfWeek["min"] = 0
+  FirstDayOfWeek["sec"] = 0
+  return os.time(FirstDayOfWeek)
+end
+
+function FirstDayOfWeekDayOfYear( ostime )
+  return os.date("%j", FirstDayOfWeekInSeconds(ostime))
+end
+
+function FirstDayOfWeekYYYYMMDDHHMMSS( ostime )
+  return os.date("%Y%m%d000000", FirstDayOfWeekInSeconds(ostime))
+end
+
+function FirstDayOfWeekTable( ostime )
+  return os.date("*t", FirstDayOfWeekInSeconds(ostime))
+end
+
 
 function HelpText( AppName )
   return AppName
