@@ -93,26 +93,28 @@ function right_trim(s)
 end
 
 
-function time_diff_in_minutes(time1, time2)
--- time1 and time2 needs to be in format YYYYMMDDHHMMSS
--- Define two timestamps as tables with year, month, day, hour, min, sec fields
-  local t1 = time_from_string(time1)
-  local t2 = time_from_string(time2)
+function time_diff_in_minutes(time2)
+  return function(time1)
+  -- time1 and time2 needs to be in format YYYYMMDDHHMMSS
+  -- Define two timestamps as tables with year, month, day, hour, min, sec fields
+    local t1 = time_from_string(time1)
+    local t2 = time_from_string(time2)
 
--- Convert the tables to numbers using os.time
-  local n1 = os.time(t1)
-  local n2 = os.time(t2)
+  -- Convert the tables to numbers using os.time
+    local n1 = os.time(t1)
+    local n2 = os.time(t2)
 
--- Calculate the difference in seconds using os.difftime
-  local seconds = os.difftime(n2, n1)
+  -- Calculate the difference in seconds using os.difftime
+    local seconds = os.difftime(n2, n1)
 
-  local minutes = seconds // 60
-  local x1 = seconds % 60
-  if (x1 >= 30) then 
-    minutes = minutes + 1
+    local minutes = seconds // 60
+    local x1 = seconds % 60
+    if (x1 >= 30) then 
+      minutes = minutes + 1
+    end
+
+    return minutes
   end
-
-  return minutes
 end
 
 function time_from_string(time)
@@ -152,21 +154,75 @@ function getFirstDateOfWeek(year, week)
 end
 
 
-function FirstDayOfThisWeek()
-  local now = os.time()
-  local currentDayOfWeek = os.date("%w")
+function MondayInWeekInSeconds(year)
+  return function(week)
+      local FirstMondayInYearInSeconds = FirstMondayInSeconds(year)
+      local SecondsToWeek = ((week - 1) * 7) * 60 * 60 * 24
 
--- Calculate seconds until the first day of the week (Monday)
-  if currentDayOfWeek == 0 then
-      -- Sunday
-      currentDayOfWeek = 7
+      return FirstMondayInYearInSeconds + SecondsToWeek
   end
-
-  local secondsUntilFirstDay = (currentDayOfWeek - 1) * 60 * 60 * 24
-  local firstDayTimestamp = now - secondsUntilFirstDay
-  
-  return os.date("%Y%m%d000000", firstDayTimestamp)
 end
+
+-- Example usage
+-- local getMondayInWeek = MondayInWeekInSecondsCurried(2023)
+-- local result = getMondayInWeek(45)
+-- print(result)
+
+-- function MondayInWeekInSeconds( year, week )
+--  local FirstMondayInYearInSeconds = FirstMondayInSeconds( year )
+--  local SecondsToWeek = ((week - 1) * 7) * 60 * 60 * 24
+--
+--  return FirstMondayInYearInSeconds + SecondsToWeek
+-- end
+
+
+-- Curried function to format Monday in a week as YYYYMMDDHHMMSS
+function MondayInWeekYYYYMMDDHHMMSS(year)
+  return function(week)
+      local seconds = MondayInWeekInSeconds(year)(week)
+      return os.date("%Y%m%d000000", seconds)
+  end
+end
+
+-- Example usage
+-- local getMondayInWeekFormatted = MondayInWeekYYYYMMDDHHMMSS(2023)
+-- local result = getMondayInWeekFormatted(45)
+
+function MondayInWeekTable(year)
+  return function(week)
+      local seconds = MondayInWeekInSeconds(year)(week)
+      return os.date("*t", seconds)
+  end
+end
+
+
+
+function FirstMondayInSeconds( year )
+  local JanuaryFirst = os.time{year = year, month = 1, day = 1}
+  local JanuaryFirstDayOfWeek = tonumber(os.date("%w", JanuaryFirst))
+  if (JanuaryFirstDayOfWeek == 0) then
+    DayOfWeek = 7
+  else
+    DayOfWeek = JanuaryFirstDayOfWeek
+  end
+  if (DayOfWeek == 1) then
+    DaysToFirstMonday = 0
+  elseif ((DayOfWeek > 1) and (DayOfWeek <= 4)) then
+    DaysToFirstMonday = (DayOfWeek - 1) * (-1)
+  else
+    DaysToFirstMonday = 8 - DayOfWeek
+  end
+  return JanuaryFirst + (DaysToFirstMonday * 60 * 60 * 24)
+end
+
+function FirstMondayYYYYMMDDHHMMSS( year )
+  return os.date("%Y%m%d000000", FirstMondayInSeconds( year ))
+end
+
+function FirstMondayTable( year )
+  return os.date("*t",FirstMondayInSeconds( year ))
+end
+
 
 function FirstDayOfWeekInSeconds( ostime )
   -- Just handle norwegian calendar. Monday is first day of week
@@ -276,7 +332,9 @@ function ToDagliglogg( Command )
   return function()
     if Command == "SendTo" then
       -- Add logg note with duration to sqlite3 database
-      dagliglogg_ny()
+      db = hs.sqlite3.open(db_dagliglogg_directory .. db_dagliglogg_file)
+      dagliglogg_ny(db)
+      db:close()
     end
   end
 end
@@ -383,18 +441,18 @@ function UpperAllText(TextArray)
   local words = {}
   local index = 1
 
-  local function ToUpper(a, n)
-    table.insert(words,string.upper(a[n]))
-    n = next(a, n)
-    if n ~= nil then
-      ToUpper(a, n)
+  local function ToUpper(a)
+    if a[index] ~= nil then
+      table.insert(words, string.upper(a[index]))
+      index = index + 1
+      return ToUpper(a)
+    else
+      return words
     end
   end
-
-  ToUpper(TextArray, index)
-
-  return words
+  return ToUpper(TextArray)
 end
+
 
 function ltrim(s)
   local l = 1
@@ -413,3 +471,9 @@ function rtrim(s)
   return string.sub(s,l,r)
 end
 
+function time_formated(seconds)
+  if seconds == nil then
+    seconds = os.time()
+  end
+  return os.date("%Y%m%d%H%M%S", seconds)
+end
