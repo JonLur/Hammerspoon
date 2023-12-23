@@ -83,7 +83,6 @@ function all_trim(s)
   return string.match( string.match(s, "^%s*(.*)"), "(.-)%s*$")
 end
 
-
 function left_trim(s)
   return string.match(s, "^%s*(.*)")
 end
@@ -91,7 +90,6 @@ end
 function right_trim(s)
   return string.match(s,"(.-)%s*$")
 end
-
 
 function time_diff_in_minutes(time2)
   return function(time1)
@@ -149,10 +147,8 @@ function getFirstDateOfWeek(year, week)
 
   firstDateOfWeek = januaryFirst + ((daysToFirstMonday + daysToTargetWeek) * 24 * 60 * 60)
 
-  return firstDateOfWeek
-  
+  return firstDateOfWeek  
 end
-
 
 function MondayInWeekInSeconds(year)
   return function(week)
@@ -163,20 +159,6 @@ function MondayInWeekInSeconds(year)
   end
 end
 
--- Example usage
--- local getMondayInWeek = MondayInWeekInSecondsCurried(2023)
--- local result = getMondayInWeek(45)
--- print(result)
-
--- function MondayInWeekInSeconds( year, week )
---  local FirstMondayInYearInSeconds = FirstMondayInSeconds( year )
---  local SecondsToWeek = ((week - 1) * 7) * 60 * 60 * 24
---
---  return FirstMondayInYearInSeconds + SecondsToWeek
--- end
-
-
--- Curried function to format Monday in a week as YYYYMMDDHHMMSS
 function MondayInWeekYYYYMMDDHHMMSS(year)
   return function(week)
       local seconds = MondayInWeekInSeconds(year)(week)
@@ -184,18 +166,12 @@ function MondayInWeekYYYYMMDDHHMMSS(year)
   end
 end
 
--- Example usage
--- local getMondayInWeekFormatted = MondayInWeekYYYYMMDDHHMMSS(2023)
--- local result = getMondayInWeekFormatted(45)
-
 function MondayInWeekTable(year)
   return function(week)
       local seconds = MondayInWeekInSeconds(year)(week)
       return os.date("*t", seconds)
   end
 end
-
-
 
 function FirstMondayInSeconds( year )
   local JanuaryFirst = os.time{year = year, month = 1, day = 1}
@@ -222,7 +198,6 @@ end
 function FirstMondayTable( year )
   return os.date("*t",FirstMondayInSeconds( year ))
 end
-
 
 function FirstDayOfWeekInSeconds( ostime )
   -- Just handle norwegian calendar. Monday is first day of week
@@ -252,7 +227,6 @@ function FirstDayOfWeekTable( ostime )
   return os.date("*t", FirstDayOfWeekInSeconds(ostime))
 end
 
-
 function HelpText( AppName )
   return AppName
 end
@@ -278,8 +252,8 @@ function ApplicationFocus( AppName )
   end
 end
 
--- Run Chrome and open new tab for searching
 function InternetSearch( AppName )
+  -- Run Chrome and open new tab for searching
   return function()
     hs.application.launchOrFocus( AppName )
     hs.eventtap.keyStroke({"cmd"}, "T")
@@ -378,7 +352,6 @@ function imgKeyboardOption()
   end
 end
 
-
 function StandardOpening( AppNamesMonitor )
   return function()
     if not (AppNamesMonitor[1] == nil) then
@@ -415,13 +388,12 @@ function StandardOpening( AppNamesMonitor )
   end
 end
 
-
 function splitCommandFromSentence(sentence)
   local words = {}
   local SplittFirstNWords = 2
 
   local function splitHelper(str, nWords)
-      streng = ltrim(str)
+      streng = left_trim(str)
       local spaceIndex = string.find(streng, " ")
 
       if spaceIndex then
@@ -435,7 +407,7 @@ function splitCommandFromSentence(sentence)
       end
   end
 
-  setning = rtrim(sentence)
+  setning = right_trim(sentence)
 
   splitHelper(setning, SplittFirstNWords)
 
@@ -458,24 +430,6 @@ function UpperAllText(TextArray)
   return ToUpper(TextArray)
 end
 
-
-function ltrim(s)
-  local l = 1
-  while string.sub(s,l,l) == ' ' do
-    l = l+1
-  end
-  return string.sub(s,l,r)
-end
-
-function rtrim(s)
-  local l = 1
-  local r = string.len(s)
-  while string.sub(s,r,r) == ' ' do
-    r = r-1
-  end
-  return string.sub(s,l,r)
-end
-
 function time_formated(seconds)
   if seconds == nil then
     seconds = os.time()
@@ -494,7 +448,6 @@ function rapport_innstillinger_dag(dag)
   return aInnstillinger
 end
 
-
 function rapport_innstillinger_uke(uke)
   local aInnstillinger = {}
 
@@ -509,13 +462,12 @@ function rapport_innstillinger_uke(uke)
   return aInnstillinger
 end
 
-
 function rapport_innstillinger_mnd(mnd)
   local aInnstillinger = {}
 
-  local year = tonumber(os.date("%Y", mnd))
-  local month = tonumber(os.date("%m", mnd))
-  local start = os.time({year = year, month = month, day = 1})
+  local year_start = tonumber(os.date("%Y", mnd))
+  local month_start = tonumber(os.date("%m", mnd))
+  local start = os.time({year = year_start, month = month_start, day = 1})
   if (month == 12) then
       year_stopp = year + 1
       month_stopp = 1
@@ -531,4 +483,33 @@ function rapport_innstillinger_mnd(mnd)
   aInnstillinger["filnavn"] = os.date("%Ymnd%m.txt", mnd)
 
   return aInnstillinger
+end
+
+function get_time(word)
+  -- If last is m/M/t/T then tid will be nil
+  local tid = tonumber(word)
+
+  if tid == nil then
+    -- If last char is number or different from m/t then timeindex = 1
+    local length_word = string.len(word)
+    local format = string.upper(string.sub(word,length_word,length_word))
+    local index
+    local tid
+
+    if (format == 'M') then
+        index = 1
+        tid = tonumber(string.sub(word,1,length_word-1))
+    elseif (format == 'T') then
+        index = 60
+        tid = tonumber(string.sub(word,1,length_word-1))
+    else
+        -- timeformat is unknown character - then we set time to 0
+        index = 1
+        tid = 0
+    end
+
+    return tid * index
+  else
+    return tid
+  end
 end
