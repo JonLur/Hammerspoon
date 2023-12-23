@@ -3,7 +3,7 @@
 -- File: jobbmaskin.lua
 -- Author: Jon Lurås
 -- Date: 2023.11.12
--- Endret: 2023.12.18
+-- Endret: 2023.12.23
 -- Version: 3.0.0
 ------------------------
 
