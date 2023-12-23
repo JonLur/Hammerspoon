@@ -416,7 +416,7 @@ function StandardOpening( AppNamesMonitor )
 end
 
 
-function splitSentence(sentence)
+function splitCommandFromSentence(sentence)
   local words = {}
   local SplittFirstNWords = 2
 
@@ -481,4 +481,54 @@ function time_formated(seconds)
     seconds = os.time()
   end
   return os.date("%Y%m%d%H%M%S", seconds)
+end
+
+function rapport_innstillinger_dag(dag)
+  local aInnstillinger = {}
+
+  aInnstillinger["start"] = os.date("%Y%m%d000000", dag)
+  aInnstillinger["stopp"] = os.date("%Y%m%d000000", dag + (60*60*24))
+  aInnstillinger["summering"] = true
+  aInnstillinger["filnavn"] = os.date("%Y%m%d.txt", dag)
+
+  return aInnstillinger
+end
+
+
+function rapport_innstillinger_uke(uke)
+  local aInnstillinger = {}
+
+  local start = FirstDayOfWeekInSeconds(uke)
+  local stopp = start + (60*60*24*7)
+
+  aInnstillinger["start"] = os.date("%Y%m%d000000", start)
+  aInnstillinger["stopp"] = os.date("%Y%m%d000000", stopp)
+  aInnstillinger["summering"] = false
+  aInnstillinger["filnavn"] = os.date("%Yuke%W.txt", uke)
+
+  return aInnstillinger
+end
+
+
+function rapport_innstillinger_mnd(mnd)
+  local aInnstillinger = {}
+
+  local year = tonumber(os.date("%Y", mnd))
+  local month = tonumber(os.date("%m", mnd))
+  local start = os.time({year = year, month = month, day = 1})
+  if (month == 12) then
+      year_stopp = year + 1
+      month_stopp = 1
+  else
+      year_stopp = year + 1
+      month_stopp = month + 1
+  end
+  local stopp = os.time({year = year_stopp, month = month_stopp, day = 1})
+
+  aInnstillinger["start"] = os.date("%Y%m%d000000", start)
+  aInnstillinger["stopp"] = os.date("%Y%m%d000000", stopp)
+  aInnstillinger["summering"] = false
+  aInnstillinger["filnavn"] = os.date("%Ymnd%m.txt", mnd)
+
+  return aInnstillinger
 end
