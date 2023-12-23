@@ -285,8 +285,8 @@ function dagliglogg_ny(db_dagliglogg)
 
     -- db_dagliglogg = hs.sqlite3.open(db_dagliglogg_directory .. db_dagliglogg_file)
 
-    previousapplication = hs.application.frontmostApplication()
-    previouswindow = previousapplication:focusedWindow()
+    -- previousapplication = hs.application.frontmostApplication()
+    -- previouswindow = previousapplication:focusedWindow()
 
     local last_time, errormessage = get_last_time(db_dagliglogg)
     if not last_time then
@@ -410,7 +410,7 @@ function dagliglogg_ny(db_dagliglogg)
 
     -- db_dagliglogg:close()
 
-    if (previouswindow ~= nil) then
-        previouswindow:focus()
-    end
+    -- if (previouswindow ~= nil) then
+    --     previouswindow:focus()
+    -- end
 end

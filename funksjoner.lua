@@ -332,9 +332,14 @@ function ToDagliglogg( Command )
   return function()
     if Command == "SendTo" then
       -- Add logg note with duration to sqlite3 database
+      local previousapplication = hs.application.frontmostApplication()
+      local previouswindow = previousapplication:focusedWindow()
       db = hs.sqlite3.open(db_dagliglogg_directory .. db_dagliglogg_file)
       dagliglogg_ny(db)
       db:close()
+      if (previouswindow ~= nil) then
+        previouswindow:focus()
+      end
     end
   end
 end
