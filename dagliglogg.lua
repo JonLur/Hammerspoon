@@ -32,7 +32,6 @@ db_dagliglogg = hs.sqlite3.open(db_dagliglogg_directory .. db_dagliglogg_file)
 db_dagliglogg:exec("CREATE TABLE IF NOT EXISTS " .. db_dagliglogg_table .. " (timestamp STRING, lengde INTEGER, text STRING)")
 db_dagliglogg:close()
 
-
 function get_last_time(db)
     local stmt = db:prepare("SELECT max(timestamp) FROM daglig")
 
@@ -107,7 +106,6 @@ function get_last_lengde_text(db)
         return lastlengde, lasttext
     end
 end
-
 
 function get_report(db)
     return function(periodestart, periodeslutt, periodesummering, rapportfilnavn)
@@ -203,32 +201,6 @@ function get_report(db)
     end
 end
 
-
-function get_time_info(word)
--- If last char is number or different from m/t then timeindex = 1
-    local length_word = string.len(word)
-    local timeformat = string.sub(word,length_word,length_word)
-    local timeindex = 1
-    local time = 0
-    if (tonumber(timeformat) == nil) then
-        if (timeformat == 'm') then
-            timeindex = 1
-            time = tonumber(string.sub(word,1,length_word-1))
-        elseif (timeformat == 't') then
-            timeindex = 60
-            time = tonumber(string.sub(word,1,length_word-1))
-        else
--- timeformat is unknown character - then we set time to 0
-            timeindex = 1
-            time = 0
-        end
-    else
--- timeformat is a number
-        time = tonumber(word)
-    end
-    return time, timeindex
-end
-
 function oppgave(db)
     return function(oppgave_text)
         local result
@@ -238,11 +210,9 @@ function oppgave(db)
         local first_word = string.sub(oppgave_text,1,first_word_index-1)
 
         -- Start with number
-        local is_number = string.sub(first_word,1,1)
-        if (tonumber(is_number) ~= nil) then
-
-            local time, time_index = get_time_info(first_word)
-            used_time = time * time_index
+        local is_number = tonumber(string.sub(first_word,1,1))
+        if (is_number ~= nil) then
+            used_time = get_time(first_word)
             text = string.sub(oppgave_text, first_word_index+1)
         else
             -- Ingen tid angitt
@@ -254,24 +224,6 @@ function oppgave(db)
         return db:error_code()
     end
 end
-
-
-
-
-function dato_start(periode)
-    local startpunkt = nil
-
-    if (periode == 'DAG') then
-        startpunkt = os.date("%Y%m%d000000")
-    elseif (periode == 'UKE') then
-        startpunkt = FirstDayOfWeekYYYYMMDDHHMMSS( os.time() )
-    elseif (periode == 'MND') then
-        startpunkt = os.date("%Y%m01000000")
-    end
-
-    return startpunkt
-end
-
 
 function dagliglogg_ny(db_daglig)
     local respons, beskrivelse, spaceindex, timeformat, lengde
@@ -347,8 +299,8 @@ function dagliglogg_ny(db_daglig)
                         aRapport = rapport_innstillinger_uke(monday_seconds)
                     elseif (n == 8) then
                         -- Dato i format YYYYMMDD
-                        local dag = os.time(time_from_string(TekstInput[2]))
-                        aRapport = rapport_innstillinger_dag(dag)
+                        local dag_seconds = os.time(time_from_string(TekstInput[2]))
+                        aRapport = rapport_innstillinger_dag(dag_seconds)
                     end
                 else
                     error_message = "Ukjent parameter etter EXPORT kommando."
