@@ -274,38 +274,26 @@ end
 
 
 function dagliglogg_ny(db_dagliglogg)
--- Finne siste basert på tidspunkt - erstatning for last_insert_rowid?
--- select max(timestamp) from daglig 
--- Kanskje putte teksten fra denne inn i bruker prompt
     local respons, beskrivelse, spaceindex, timeformat, lengde
     local kontroll = false
     local rapportsummering = false
     local ukenr = nil
     local dato = nil
 
-    -- db_dagliglogg = hs.sqlite3.open(db_dagliglogg_directory .. db_dagliglogg_file)
-
-    -- previousapplication = hs.application.frontmostApplication()
-    -- previouswindow = previousapplication:focusedWindow()
-
     local last_time, errormessage = get_last_time(db_dagliglogg)
     if not last_time then
         print("Error:", errormessage)
-        -- db_dagliglogg:close()
         return 
     end
-
 
     f_lengde_tekst = get_last_lengde_text(db_dagliglogg)
     lastlengde, lasttext = f_lengde_tekst(last_time)
     if not lastlengde then
         print("Error:", errormessage)
-        -- db_dagliglogg:close()
         return 
     end
     if not lasttext then
         print("Error:", errormessage)
-        -- db_dagliglogg:close()
         return 
     end
 
@@ -319,16 +307,11 @@ function dagliglogg_ny(db_dagliglogg)
     end
     respons, beskrivelse = hs.dialog.textPrompt("Daglig logg", statustext, "Start gjerne med minutter.", "OK", "Cancel")
 
-    local f_now_time = time_diff_in_minutes(time_formated(os.time()))
-    local used_time = f_now_time(last_time)
+    local f_time_diff = time_diff_in_minutes(time_formated(os.time()))
+    local used_time = f_time_diff(last_time)
 
     if (respons == "OK") then
         TekstInput = UpperAllText(splitSentence(beskrivelse))
-        -- Remove all spaces in front and in end
-        local firstword = nil
-        local secondword = nil
-        local beskrivelse = all_trim(beskrivelse)
-        local uppertext = string.upper(beskrivelse)
 
         if (string.find(kommandoer, TekstInput[1]) ~= nil ) then
             if (TekstInput[1] == 'STOPP') then
@@ -407,10 +390,4 @@ function dagliglogg_ny(db_dagliglogg)
             end
         end
     end
-
-    -- db_dagliglogg:close()
-
-    -- if (previouswindow ~= nil) then
-    --     previouswindow:focus()
-    -- end
 end
