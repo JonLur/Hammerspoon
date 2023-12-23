@@ -3,11 +3,18 @@
 -- File: init.lua
 -- Author: Jon Lurås
 -- Date: 2023.11.12
--- Version: 2.0
+-- Endret: 2023.12.23
+-- Version: 3.0.0
 ------------------------
 
 hs = _ENV.hs
 spoon = _ENV.spoon
+
+MyHotKeys = {}
+StandardStartMonitor = {}
+
+hints = require "hs.hints"
+watcher = nil
 
 --- Spoons
 hs.loadSpoon("WindowScreenLeftAndRight")
@@ -16,153 +23,61 @@ spoon.WindowScreenLeftAndRight:bindHotkeys(spoon.WindowScreenLeftAndRight.defaul
 hs.loadSpoon("MouseCircle")
 spoon.MouseCircle:bindHotkeys({show={{"ctrl", "alt", "cmd"}, "M"}} )
 
--- hs.loadSpoon("SendToOmniFocus")
--- spoon.SendToOmniFocus.notifications = false
--- spoon.SendToOmniFocus:bindHotkeys({send_to_omnifocus={{"ctrl", "alt"}, "G"}})
-
--- hs.loadSpoon("SpoonInstall")
--- spoon.SpoonInstall.repos.skrypka = {
---   url = "https://github.com/skrypka/Spoons",
---   desc = "Skrypka's spoon repository",
--- }
--- spoon.SpoonInstall.use_syncinstall = true
--- spoon.SpoonInstall:andUse("PushToTalk", {
---  start = true,
---  config = {
---    app_switcher = { ['zoom.us'] = 'push-to-talk' }
---  }
--- })
-
--- hs.loadSpoon("DeepLTranslate")
--- spoon.DeepLTranslate:bindHotkeys({translate={{"ctrl", "alt"}, "E"}} )
-
--- hs.hotkey.bind({"ctrl", "alt"}, "E", "DeepLTranslate", function()
---   spoon.DeepLTranslate:translateSelectionPopup()
--- end)
--- spoon.PushToTalk.app_switcher = { ['zoom.us'] = 'push-to-talk' }
-
---- hs.loadSpoon("ToggleSkypeMute")
---- spoon.ToggleSkypeMute.bindHotkeys({{"ctrl", "alt"}, "Z"})
---- hs.hotkey.bind({"ctrl", "alt"}, "Z", "Skype mute", function()
----    spoon.ToggleSkypeMute.toggle("Skype for Business")
---- end)
+require('funksjoner')
+require('cheatsheets')
+require('evoluent')
+require('battery')
+require('dagliglogg')
 
 -- Get and print the serial number
 result, serial_number = hs.osascript.applescript("set serialNumber to do shell script \"system_profiler SPHardwareDataType | awk '/Serial/ {print $4}'\"")
 if not result then
   print("Error retrieving serialnumber")
   serial_number = nil
+else
+  if (serial_number == "C02DW1QNQ6L5" ) then
+    print("Laster hjemmemaskin")
+    require('hjemmemaskin')
+  elseif (serial_number == "C02G945EQ6LR") then
+    print("Laster jobbmaskin")
+    require('jobbmaskin')
+  end
 end
-
-require('funksjoner')
-require('cheatsheets')
-require('evoluent')
-require('battery')
-require('dagliglogg')
---- require('jumpcut')
---- require('position')
---- require('hotkeys')
---- require('pomodoro')
---- require('simplemind')
-
-if (serial_number == "C02DW1QNQ6L5" ) then
-  print("Laster hjemmemaskin")
-  require('hjemmemaskin')
-elseif (serial_number == "C02G945EQ6LR") then
-  print("Laster jobbmaskin")
-  require('jobbmaskin')
-end
-
-hints = require "hs.hints"
-watcher = nil
 
 watcher = hs.application.watcher.new(applicationWatcher)
 
-
 --- Applications
--- Run OmniFocus
-hs.hotkey.bind({"ctrl", "alt"}, "O", "OmniFocus", function()
-    hs.application.launchOrFocus("OmniFocus")
-    watcher:start()
-end)
+table.insert(MyHotKeys, {KeyModifier("CtrlAlt"), KeyHotKey("O"), HelpText("OmniFocus"), ApplicationFocus("OmniFocus")})
+table.insert(MyHotKeys, {KeyModifier("CtrlAlt"), KeyHotKey("L"), HelpText("LastPass"), ApplicationFocus("LastPass")})
+table.insert(MyHotKeys, {KeyModifier("CtrlAlt"), KeyHotKey("I"), HelpText("iTerm2"), ApplicationFocus("iTerm")})
+table.insert(MyHotKeys, {KeyModifier("CtrlAlt"), KeyHotKey("P"), HelpText("PreView"), ApplicationFocus("PreView")})
+table.insert(MyHotKeys, {KeyModifier("CtrlAlt"), KeyHotKey("F"), HelpText("Search remaining in OmniFocus"), InOmniFocus("FindIn")})
+table.insert(MyHotKeys, {KeyModifier("CtrlAlt"), KeyHotKey("H"), HelpText("Copy selected to OmniFocus"), InOmniFocus("CopyTo")})
+table.insert(MyHotKeys, {KeyModifier("CtrlAlt"), KeyHotKey("J"), HelpText("Dagliglogg to Sqlite3"), ToDagliglogg("SendTo")})
+table.insert(MyHotKeys, {KeyModifier("CtrlAltCmd"), KeyHotKey("U"), HelpText("Note to last modified task OmniFocus"), InOmniFocus("NoteTo")})
+table.insert(MyHotKeys, {KeyModifier("CtrlAltCmd"), KeyHotKey("S"), HelpText("URL to OmniFocus"), InOmniFocus("URLTo")})
+table.insert(MyHotKeys, {KeyModifier("CtrlAltCmd"), KeyHotKey("L"), HelpText("Lock Screen"), LockScreen()})
+table.insert(MyHotKeys, {KeyModifier("CtrlAltCmd"), KeyHotKey("T"), HelpText("Insert date"), InsertDate()})
+table.insert(MyHotKeys, {KeyModifier("CtrlAltCmd"), KeyHotKey("W"), HelpText("Vinduer"), WindowHints()})
+table.insert(MyHotKeys, {KeyModifier("CtrlAlt"), KeyHotKey("A"), HelpText("Standard åpninger"), StandardOpening(StandardStartMonitor)})
 
-hs.hotkey.bind({"ctrl", "alt"}, "F", "Search remaining in OmniFocus", function()
-  app = hs.application.get("OmniFocus")
-  app:activate()
-  app:selectMenuItem("Search Remaining")
-end)
-
--- Add highlited to OmniFocus
-hs.hotkey.bind({"ctrl", "alt"}, "H", "Copy selected to OmniFocus", function()
-  hs.eventtap.keyStroke({"cmd"}, "C")
-  hs.eventtap.keyStroke({"ctrl", "alt"}, "space")
-  delayedPasteWithoutReturn()
-end)
-
--- Add note to OmniFocus
-hs.hotkey.bind({"ctrl", "alt","cmd"}, "U", "Note to last modified task OmniFocus", function()
-  hs.osascript.applescriptFromFile("omnifocus-note.applescript")
-end)
-
--- Save URL and title from Chrome/Safari to OmniFocus
-hs.hotkey.bind({"ctrl", "alt", "cmd"}, "S", "URL to OmniFocus", function()
-hs.osascript.applescriptFromFile("url-to-omnifocus.applescript")
-end)
-
--- Run LastPass
-hs.hotkey.bind({"ctrl", "alt"}, "L", "LastPass", function()
-    hs.application.launchOrFocus("LastPass")
-    watcher:start()
-end)
-
--- Run iTerm
-hs.hotkey.bind({"ctrl", "alt"}, "I", "iTerm2", function()
-    hs.application.launchOrFocus("iTerm")
-    watcher:start()
-end)
-
-
--- Run PreView
-hs.hotkey.bind({"ctrl", "alt"}, "P", "PreView", function()
-    hs.application.launchOrFocus("Preview")
-    watcher:start()
-end)
-
-
--- Add logg note with duration to sqlite3 database
-hs.hotkey.bind({"ctrl", "alt"}, "J", "Dagliglogg to Sqlite3", function()
-  dagliglogg_ny()
-end)
-
--- Save scpt as applescript to OmniFocus
--- hs.hotkey.bind({"ctrl", "alt", "cmd"}, "A", "Save also as applescript", function()
---    hs.osascript.applescriptFromFile("save-applescript-as-text.applescript")
--- end)
+-- Bind hotkeys
+for i, v in ipairs(MyHotKeys) do
+  HotKey = v
+  array = {}
+  for j, w in ipairs(HotKey) do
+    array[j] = w
+  end
+  hs.hotkey.bind(array[1], array[2], array[3], array[4])
+end
 
 -- Keyboard space replace
 hs.hotkey.bind(nil, "¨","Space", function() hs.eventtap.keyStroke({},"space") end)
-
--- Lock screen
-hs.hotkey.bind({"ctrl", "alt", "cmd"}, "L", "Lock Screen", function()
--- hs.caffeinate.lockScreen()
-  hs.caffeinate.startScreensaver()
-end)
-
--- Insert date
-hs.hotkey.bind({"ctrl", "alt", "cmd"}, "T", "Insert date", function()
-  hs.eventtap.keyStrokes(os.date("%d.%m.%y %H:%M"))
-end)
-
-hints.style="vimperator"
-hints.showTitleThresh=10
-hs.hotkey.bind({"ctrl", "alt", "cmd"}, "W", "Vinduer", function() hints.windowHints(nil, centerMouseActiveWindow) end)
 
 -- Show hotkeys place at midle of screen.
 -- hs.hotkey.showHotkeys({"cmd", "ctrl", "alt"}, "S")
 hs.hotkey.alertDuration = 0
 
-
 -- Config reloading
-
 hs.pathwatcher.new(os.getenv("HOME") .. "/.hammerspoon/", reloadConfig):start()
 hs.alert.show("Config loaded")
