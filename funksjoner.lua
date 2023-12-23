@@ -128,28 +128,6 @@ function time_from_string(time)
   return t1
 end
 
-function getFirstDateOfWeek(year, week)
--- Aksepterer uke 0 og 54 og andre ikke gyldig ukenummer, men ser ut til å rapportere riktig på lovlige dager.
-  local daysToTargetWeek = (week - 1) * 7
-  local daysToFirstMonday = 0
-  local firstDateOfWeek = 0
-  local januaryFirst = os.time{year = year, month = 1, day = 1}
-  local DayOfWeek = tonumber(os.date("%w", januaryFirst))
-  if (DayOfWeek == 0) then
-    daysToFirstMonday = 1
-  elseif (DayOfWeek == 1) then
-    daysToFirstMonday = 0
-  elseif ((DayOfWeek > 1) and (DayOfWeek <= 4)) then
-    daysToFirstMonday = (DayOfWeek - 1) * (-1)
-  else
-    daysToFirstMonday = 8 - DayOfWeek
-  end
-
-  firstDateOfWeek = januaryFirst + ((daysToFirstMonday + daysToTargetWeek) * 24 * 60 * 60)
-
-  return firstDateOfWeek  
-end
-
 function MondayInWeekInSeconds(year)
   return function(week)
       local FirstMondayInYearInSeconds = FirstMondayInSeconds(year)
@@ -305,14 +283,15 @@ end
 function ToDagliglogg( Command )
   return function()
     if Command == "SendTo" then
-      -- Add logg note with duration to sqlite3 database
-      local previousapplication = hs.application.frontmostApplication()
-      local previouswindow = previousapplication:focusedWindow()
+      local active_application = hs.application.frontmostApplication()
+
       db = hs.sqlite3.open(db_dagliglogg_directory .. db_dagliglogg_file)
       dagliglogg_ny(db)
       db:close()
-      if (previouswindow ~= nil) then
-        previouswindow:focus()
+
+      if not active_application:activate() then
+        error_message = "Fikk ikke aktivert siste aktive applikasjon"
+        print("Error:", error_message)
       end
     end
   end
