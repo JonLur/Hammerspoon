@@ -113,7 +113,7 @@ function get_report(db)
     return function(periodestart, periodeslutt, periodesummering, rapportfilnavn)
         local outputfile = db_dagliglogg_directory .. rapportfilnavn
         local totalsum = 0
-    
+
         if (hs.fs.displayName(outputfile) ~= nil) then
             os.remove(outputfile)
         end
@@ -273,20 +273,20 @@ function dato_start(periode)
 end
 
 
-function dagliglogg_ny(db_dagliglogg)
+function dagliglogg_ny(db_daglig)
     local respons, beskrivelse, spaceindex, timeformat, lengde
     local kontroll = false
     local rapportsummering = false
     local ukenr = nil
     local dato = nil
 
-    local last_time, errormessage = get_last_time(db_dagliglogg)
+    local last_time, errormessage = get_last_time(db_daglig)
     if not last_time then
         print("Error:", errormessage)
         return 
     end
 
-    f_lengde_tekst = get_last_lengde_text(db_dagliglogg)
+    f_lengde_tekst = get_last_lengde_text(db_daglig)
     lastlengde, lasttext = f_lengde_tekst(last_time)
     if not lastlengde then
         print("Error:", errormessage)
@@ -311,79 +311,59 @@ function dagliglogg_ny(db_dagliglogg)
     local used_time = f_time_diff(last_time)
 
     if (respons == "OK") then
-        TekstInput = UpperAllText(splitSentence(beskrivelse))
+        TekstInput = UpperAllText(splitCommandFromSentence(beskrivelse))
 
         if (string.find(kommandoer, TekstInput[1]) ~= nil ) then
             if (TekstInput[1] == 'STOPP') then
                 if (lastlengde == 0) then
-                    db_dagliglogg:exec("UPDATE " .. db_dagliglogg_table .. " SET lengde = " .. used_time .. " WHERE timestamp = '" .. last_time .. "' ")
+                    db_daglig:exec("UPDATE " .. db_dagliglogg_table .. " SET lengde = " .. used_time .. " WHERE timestamp = '" .. last_time .. "' ")
                 end
             elseif (TekstInput[1] == 'EXPORT') then
-                if (TekstInput[2] == nil) or (string.find(kommandoer, TekstInput[2]) ~= nil ) or (tonumber(TekstInput[2]) ~= nil)  then
-                    -- Lovlig kommando, tall eller ikke noe
-                    -- ikke noe er det samme som kommandoen 'DAG'
-                    -- Sjekk mot nil må stå først, evaluering er fra venstre mot høyre. Kanskje skrives om?
-                    if (TekstInput[2] == nil) or (TekstInput[2] == 'DAG') then
+                if (TekstInput[2] == nil) then 
+                    -- EXPORT DAG gir rapport for gjeldende dag
+                    now = os.time()
+                    aRapport = rapport_innstillinger_dag(now)
+                elseif (string.find(kommandoer, TekstInput[2]) ~= nil ) then
+                    if (TekstInput[2] == 'DAG') then
+                        -- EXPORT DAG gir rapport for gjeldende dag
                         now = os.time()
-                        start = os.date("%Y%m%d000000", now)
-                        stopp = os.date("%Y%m%d000000", now + (60*60*24))
-                        rapportsummering = true
-                        rapportfilnavn = os.date("%Y%m%d.txt")
+                        aRapport = rapport_innstillinger_dag(now)
                     elseif (TekstInput[2] == 'UKE') then
+                        -- EXPORT UKE gir rapport for gjeldende uke
                         now = os.time()
-                        start = FirstDayOfWeekYYYYMMDDHHMMSS( now )
-                        stopp = os.date("%Y%m%d000000",os.time(time_from_string(start)) + (60*60*24*7))
-                        rapportsummering = false
-                        rapportfilnavn = os.date("%Yuke%W.txt")
+                        aRapport = rapport_innstillinger_uke(now)
                     elseif (TekstInput[2] == 'MND') then
-                        start = os.date("%Y%m01000000")
-                        local year = tonumber(os.date("%Y"))
-                        local month = tonumber(os.date("%m"))
-                        if (month == 12) then
-                            year = year + 1
-                            month = 1
-                        else
-                            month = month + 1
-                        end
-                        stopp = os.date("%Y%m%d000000", os.time({year = year, month = month, day = 1}))
-                        rapportsummering = false
-                        rapportfilnavn = os.date("%Ymnd%m.txt")
-                    else
-                        -- Da er det nummer
-                        local n = string.len(TekstInput[2])
-                        if (n == 6) then
-                            ukenr = TekstInput[2]
-
-                            local f_year_ANSI = MondayInWeekYYYYMMDDHHMMSS(string.sub(ukenr,1,4))
-                            start = f_year_ANSI(string.sub(ukenr,5,6))
-
-                            local f_year_seconds = MondayInWeekInSeconds(string.sub(ukenr,1,4))
-                            local time_stopp = f_year_seconds(string.sub(ukenr,5,6)) + (60*60*24*7)
-                            stopp = os.date("%Y%m%d000000", time_stopp)
-
-                            rapportsummering = true
-                            rapportfilnavn = os.date("%YUke%W.txt", time)
-                        elseif (n == 8) then
-                            dato = TekstInput[2]
-                            local time_start = os.time(time_from_string(dato))
-                            local time_stopp = time_start + (60*60*24)
-                            start = os.date("%Y%m%d000000", time_start)
-                            stopp = os.date("%Y%m%d000000", time_stopp)
-                            rapportsummering = true
-                            rapportfilnavn = os.date("%Y%m%d.txt", time_start)
-                        end
+                        -- EXPORT MND gir rapport for gjeldende måned
+                        now = os.time()
+                        aRapport = rapport_innstillinger_mnd(now)
                     end
+                elseif (tonumber(TekstInput[2]) ~= nil) then
+                    -- Ukenummer i format YYYYWW
+                    local n = string.len(TekstInput[2])
+                    if (n == 6) then
+                        local ukenr = TekstInput[2]
+                        local f_year_seconds = MondayInWeekInSeconds(string.sub(ukenr,1,4))
+                        local monday_seconds = f_year_seconds(string.sub(ukenr,5,6))
+                        aRapport = rapport_innstillinger_uke(monday_seconds)
+                    elseif (n == 8) then
+                        -- Dato i format YYYYMMDD
+                        local dag = os.time(time_from_string(TekstInput[2]))
+                        aRapport = rapport_innstillinger_dag(dag)
+                    end
+                else
+                    error_message = "Ukjent parameter etter EXPORT kommando."
+                    print("Error:", error_message)
+                    return
                 end
 
-                local f_report = get_report(db_dagliglogg)
-                local success, error_message = f_report(start, stopp, rapportsummering, rapportfilnavn)
+                local f_report = get_report(db_daglig)
+                local success, error_message = f_report(aRapport["start"], aRapport["stopp"], aRapport["summering"], aRapport["filnavn"])
                 if not success then
                     print("Error:", error_message)
-                end
-                
+                end  
             end
         else
-            f_oppgave = oppgave(db_dagliglogg)
+            f_oppgave = oppgave(db_daglig)
             local success = f_oppgave(beskrivelse)
             if success ~= 0 then
                 print("Error:", error_message)
