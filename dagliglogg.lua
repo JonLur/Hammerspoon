@@ -7,11 +7,13 @@
 -- Version: 3.0.0
 ------------------------
 
-kommandoer = "STOPP EXPORT DAG UKE MND"
+kommandoer = "STOPP EXPORT LIST DAG UKE MND"
 -- Ok kommandoer er
 -- STOPP
 -- EXPORT [DAG/UKE/MND/num]
+-- LIST [DAG/UKE/MND/num]
 -- num er da enten dato i format YYYYMMDD eller uke i format YYYYWW 
+-- EXPORT er til tekstfil, LIST er til skjerm
 
 -- Database format:
 -- timestamp - YYYYMMDDHHMMSS
@@ -31,6 +33,8 @@ db_dagliglogg_table = "daglig"
 db_dagliglogg = hs.sqlite3.open(db_dagliglogg_directory .. db_dagliglogg_file)
 db_dagliglogg:exec("CREATE TABLE IF NOT EXISTS " .. db_dagliglogg_table .. " (timestamp STRING, lengde INTEGER, text STRING)")
 db_dagliglogg:close()
+
+myWebview = nil
 
 function get_last_time(db)
     local stmt = db:prepare("SELECT max(timestamp) FROM daglig")
@@ -201,6 +205,7 @@ function get_report(db)
     end
 end
 
+
 function oppgave(db)
     return function(oppgave_text)
         local result
@@ -312,7 +317,51 @@ function dagliglogg_ny(db_daglig)
                 local success, error_message = f_report(aRapport["start"], aRapport["stopp"], aRapport["summering"], aRapport["filnavn"])
                 if not success then
                     print("Error:", error_message)
-                end  
+                end
+
+            elseif (TekstInput[1] == 'LIST') then
+                if (TekstInput[2] == nil) then 
+                    -- EXPORT DAG gir rapport for gjeldende dag
+                    now = os.time()
+                    aRapport = rapport_innstillinger_dag(now)
+                elseif (string.find(kommandoer, TekstInput[2]) ~= nil ) then
+                    if (TekstInput[2] == 'DAG') then
+                        -- EXPORT DAG gir rapport for gjeldende dag
+                        now = os.time()
+                        aRapport = rapport_innstillinger_dag(now)
+                    elseif (TekstInput[2] == 'UKE') then
+                        -- EXPORT UKE gir rapport for gjeldende uke
+                        now = os.time()
+                        aRapport = rapport_innstillinger_uke(now)
+                    elseif (TekstInput[2] == 'MND') then
+                        -- EXPORT MND gir rapport for gjeldende måned
+                        now = os.time()
+                        aRapport = rapport_innstillinger_mnd(now)
+                    end
+                elseif (tonumber(TekstInput[2]) ~= nil) then
+                    -- Ukenummer i format YYYYWW
+                    local n = string.len(TekstInput[2])
+                    if (n == 6) then
+                        local ukenr = TekstInput[2]
+                        local f_year_seconds = MondayInWeekInSeconds(string.sub(ukenr,1,4))
+                        local monday_seconds = f_year_seconds(string.sub(ukenr,5,6))
+                        aRapport = rapport_innstillinger_uke(monday_seconds)
+                    elseif (n == 8) then
+                        -- Dato i format YYYYMMDD
+                        local dag_seconds = os.time(time_from_string(TekstInput[2]))
+                        aRapport = rapport_innstillinger_dag(dag_seconds)
+                    end
+                else
+                    error_message = "Ukjent parameter etter EXPORT kommando."
+                    print("Error:", error_message)
+                    return
+                end
+
+                local f_report_html = get_report_html(db_daglig)
+                local success, error_message = f_report_html(aRapport["start"], aRapport["stopp"], aRapport["summering"], aRapport["filnavn"])
+                if not success then
+                    print("Error:", error_message)
+                end 
             end
         else
             f_oppgave = oppgave(db_daglig)
@@ -321,5 +370,101 @@ function dagliglogg_ny(db_daglig)
                 print("Error:", error_message)
             end
         end
+    end
+end
+
+
+function get_report_html(db)
+    return function(periodestart, periodeslutt, periodesummering, rapportfilnavn)
+        local outputfile = db_dagliglogg_directory .. rapportfilnavn
+        local totalsum = 0
+        if myWebview ~= nil then
+            myWebview:delete(false)
+        end
+        myWebview = hs.webview.new({
+            x = 100,
+            y = 100,
+            w = 400,
+            h = 300
+        })
+        local htmlContentStart = [[
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Daglig logg rapport</title>
+                <style>
+                    table, th, td {
+                    border: 1px solid black;
+                    border-collapse: collapse;
+                    }
+                </style>
+            </head>
+            <body>
+                <h1>Dagliglogg</h1>
+                <table>
+        ]]
+        local htmlContentSlutt = [[
+                </table>
+            </body>
+            </html>
+        ]]
+        local table_lines_html = ""
+
+        local stmt = db:prepare("SELECT * FROM daglig WHERE (timestamp > ?) and (timestamp < ?)")
+        if not stmt then
+            -- Handle the error (e.g., print an error message, log, or throw an exception)
+            print("Error preparing SQL statement")
+            return false, "Error preparing SQL statement"
+        end
+        stmt:bind(1,periodestart)
+        stmt:bind(2,periodeslutt)
+
+        -- Write headers
+        table_lines_html = string.format("<tr><th>%s</th><th>%s</th><th>%s</th></tr>\n", "Tidspunkt", "Lengde", "Tekst")
+
+        -- Loop through the results and print them to the file
+        while stmt:step() == hs.sqlite3.ROW do
+            local timestamp = os.date("%Y.%m.%d %H:%M",os.time(time_from_string(stmt:get_value(0)))) -- timestamp
+            local lengde = stmt:get_value(1)  -- lengde
+            local tekst = stmt:get_value(2)  -- tekst
+
+            -- Check for errors when retrieving values
+            if not timestamp or not lengde or not tekst then
+                -- Handle the error (e.g., print an error message, log, or throw an exception)
+                print("Error retrieving values from the result set")
+                stmt:finalize()  -- Ensure to finalize the statement in case of an error
+                return false, "Error retrieving values from the result set"
+            end
+
+            if (periodesummering) then
+                totalsum = totalsum + lengde
+            end
+
+            -- Print or format the values as needed
+            table_lines_html = table_lines_html .. string.format("<tr><td>%s</td><td style=\"text-align:right\">%s</td><td>%s</td></tr>\n", timestamp, lengde, tekst)
+        end
+
+        if (periodesummering) then
+            -- Print or format the values as needed
+            local min = totalsum % 60
+            local timer = (totalsum-min) / 60
+            sum = string.format("%d:%d", timer, min)
+            table_lines_html = table_lines_html .. string.format("<tr><td>%s</td><td style=\"text-align:right\">%s</td><td>%s</td></tr>\n", "Totalt", sum, "")
+        end
+
+        htmlContent = htmlContentStart .. table_lines_html .. htmlContentSlutt
+
+        -- Load the HTML content into the webview and display it
+        myWebview:windowStyle(11)
+        myWebview:windowTitle("Dagliglogg")
+        myWebview:titleVisibility("visible")
+        myWebview:closeOnEscape(true)
+        -- myWebview:deleteOnClose(true)
+        myWebview:html(htmlContent):show()
+
+        -- Finalize the statement
+        stmt:finalize()
+
+        return true
     end
 end
