@@ -16,11 +16,13 @@ function delayedPaste()
   end)
 end
 
+
 function delayedPasteWithoutReturn()
   hs.timer.doAfter(0.2, function()
     hs.eventtap.keyStroke({"cmd"}, "V")
   end)
 end
+
 
 function reloadConfig(files)
   doReload = false
@@ -34,6 +36,7 @@ function reloadConfig(files)
   end
 end
 
+
 function applicationWatcher(appName, eventType, app)
   -- logApplicationWatcher(appName, eventType)
   if eventType == hs.application.watcher.activated
@@ -45,6 +48,7 @@ function applicationWatcher(appName, eventType, app)
     end
   end
 end
+
 
 function logApplicationWatcher(appName, eventType)
   if eventType == hs.application.watcher.activated then
@@ -70,6 +74,7 @@ function logApplicationWatcher(appName, eventType)
   end
 end
 
+
 -- Tastetrykk for å hoppe til åpne applikasjoner og plassere
 --  musepeker midt i det valgte vinduet.
 function centerMouseActiveWindow(window)
@@ -79,17 +84,21 @@ function centerMouseActiveWindow(window)
   hs.mouse.absolutePosition(nypos)
 end
 
+
 function all_trim(s)
   return string.match( string.match(s, "^%s*(.*)"), "(.-)%s*$")
 end
+
 
 function left_trim(s)
   return string.match(s, "^%s*(.*)")
 end
 
+
 function right_trim(s)
   return string.match(s,"(.-)%s*$")
 end
+
 
 function time_diff_in_minutes(time2)
   return function(time1)
@@ -115,6 +124,7 @@ function time_diff_in_minutes(time2)
   end
 end
 
+
 function time_from_string(time)
 -- t1 needs to be in format YYYYMMDDHHMMSS
   t1 = {}
@@ -128,6 +138,7 @@ function time_from_string(time)
   return t1
 end
 
+
 function MondayInWeekInSeconds(year)
   return function(week)
       local FirstMondayInYearInSeconds = FirstMondayInSeconds(year)
@@ -137,6 +148,7 @@ function MondayInWeekInSeconds(year)
   end
 end
 
+
 function MondayInWeekYYYYMMDDHHMMSS(year)
   return function(week)
       local seconds = MondayInWeekInSeconds(year)(week)
@@ -144,12 +156,14 @@ function MondayInWeekYYYYMMDDHHMMSS(year)
   end
 end
 
+
 function MondayInWeekTable(year)
   return function(week)
       local seconds = MondayInWeekInSeconds(year)(week)
       return os.date("*t", seconds)
   end
 end
+
 
 function FirstMondayInSeconds( year )
   local JanuaryFirst = os.time{year = year, month = 1, day = 1}
@@ -169,17 +183,20 @@ function FirstMondayInSeconds( year )
   return JanuaryFirst + (DaysToFirstMonday * 60 * 60 * 24)
 end
 
+
 function FirstMondayYYYYMMDDHHMMSS( year )
   return os.date("%Y%m%d000000", FirstMondayInSeconds( year ))
 end
+
 
 function FirstMondayTable( year )
   return os.date("*t",FirstMondayInSeconds( year ))
 end
 
+
 function FirstDayOfWeekInSeconds( ostime )
   -- Just handle norwegian calendar. Monday is first day of week
-  local DayOfWeek = os.date("%w", ostime)
+  local DayOfWeek = tonumber(os.date("%w", ostime))
   if DayOfWeek == 0 then
     DayOfWeek = 7
   end
@@ -193,25 +210,31 @@ function FirstDayOfWeekInSeconds( ostime )
   return os.time(FirstDayOfWeek)
 end
 
+
 function FirstDayOfWeekDayOfYear( ostime )
   return os.date("%j", FirstDayOfWeekInSeconds(ostime))
 end
+
 
 function FirstDayOfWeekYYYYMMDDHHMMSS( ostime )
   return os.date("%Y%m%d000000", FirstDayOfWeekInSeconds(ostime))
 end
 
+
 function FirstDayOfWeekTable( ostime )
   return os.date("*t", FirstDayOfWeekInSeconds(ostime))
 end
+
 
 function HelpText( AppName )
   return AppName
 end
 
+
 function KeyHotKey( HotKey )
   return HotKey
 end
+
 
 function KeyModifier( Modifier )
   if Modifier == "CtrlAlt" then
@@ -223,12 +246,14 @@ function KeyModifier( Modifier )
   end
 end
 
+
 function ApplicationFocus( AppName )
   return function ()
     hs.application.launchOrFocus( AppName)
     watcher:start()
   end
 end
+
 
 function InternetSearch( AppName )
   -- Run Chrome and open new tab for searching
@@ -238,11 +263,13 @@ function InternetSearch( AppName )
   end
 end
 
+
 function CopyPasteboard()
   return function()
     hs.eventtap.keyStrokes(hs.pasteboard.getContents())
   end
 end
+
 
 function CopyPasteboardWork()
   return function()
@@ -257,6 +284,7 @@ function CopyPasteboardWork()
     hs.eventtap.keyStroke({"ctrl", "cmd"}, "K")
   end
 end
+
 
 function InOmniFocus( Command )
   return function()
@@ -280,6 +308,7 @@ function InOmniFocus( Command )
   end
 end
 
+
 function ToDagliglogg( Command )
   return function()
     if Command == "SendTo" then
@@ -297,6 +326,7 @@ function ToDagliglogg( Command )
   end
 end
 
+
 function LockScreen()
   return function()
     -- Lock screen
@@ -304,11 +334,13 @@ function LockScreen()
   end
 end
 
+
 function InsertDate()
   return function()
     hs.eventtap.keyStrokes(os.date("%d.%m.%y %H:%M"))
   end
 end
+
 
 function WindowHints()
   return function()
@@ -317,6 +349,7 @@ function WindowHints()
     hints.windowHints(nil, centerMouseActiveWindow)
   end
 end
+
 
 function imgKeyboardOption()
   return function()
@@ -330,6 +363,7 @@ function imgKeyboardOption()
     end
   end
 end
+
 
 function StandardOpening( AppNamesMonitor )
   return function()
@@ -367,6 +401,7 @@ function StandardOpening( AppNamesMonitor )
   end
 end
 
+
 function splitCommandFromSentence(sentence)
   local words = {}
   local SplittFirstNWords = 2
@@ -393,6 +428,7 @@ function splitCommandFromSentence(sentence)
   return words
 end
 
+
 function UpperAllText(TextArray)
   local words = {}
   local index = 1
@@ -409,12 +445,14 @@ function UpperAllText(TextArray)
   return ToUpper(TextArray)
 end
 
+
 function time_formated(seconds)
   if seconds == nil then
     seconds = os.time()
   end
   return os.date("%Y%m%d%H%M%S", seconds)
 end
+
 
 function rapport_innstillinger_dag(dag)
   local aInnstillinger = {}
@@ -426,6 +464,7 @@ function rapport_innstillinger_dag(dag)
 
   return aInnstillinger
 end
+
 
 function rapport_innstillinger_uke(uke)
   local aInnstillinger = {}
@@ -441,6 +480,7 @@ function rapport_innstillinger_uke(uke)
   return aInnstillinger
 end
 
+
 function rapport_innstillinger_mnd(mnd)
   local aInnstillinger = {}
 
@@ -448,11 +488,11 @@ function rapport_innstillinger_mnd(mnd)
   local month_start = tonumber(os.date("%m", mnd))
   local start = os.time({year = year_start, month = month_start, day = 1})
   if (month == 12) then
-      year_stopp = year + 1
+      year_stopp = year_start + 1
       month_stopp = 1
   else
-      year_stopp = year + 1
-      month_stopp = month + 1
+      year_stopp = year_start
+      month_stopp = month_start + 1
   end
   local stopp = os.time({year = year_stopp, month = month_stopp, day = 1})
 
@@ -463,6 +503,7 @@ function rapport_innstillinger_mnd(mnd)
 
   return aInnstillinger
 end
+
 
 function get_time(word)
   -- If last is m/M/t/T then tid will be nil
