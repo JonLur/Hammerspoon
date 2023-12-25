@@ -240,6 +240,10 @@ function dagliglogg_ny(db_daglig)
     local ukenr = nil
     local dato = nil
 
+    if myWebview ~= nil then
+        myWebview:delete(false)
+    end
+
     local last_time, errormessage = get_last_time(db_daglig)
     if not last_time then
         print("Error:", errormessage)
@@ -380,9 +384,10 @@ function get_report_html(db)
     return function(periodestart, periodeslutt, periodesummering, rapportfilnavn)
         local outputfile = db_dagliglogg_directory .. rapportfilnavn
         local totalsum = 0
-        if myWebview ~= nil then
-            myWebview:delete(false)
-        end
+
+--        if myWebview ~= nil then
+--            myWebview:delete(false)
+--        end
         myWebview = hs.webview.new({
             x = 200,
             y = 100,
@@ -475,74 +480,74 @@ function get_report_html(db)
     end
 end
 
-local function get_time(word)
+function get_time(word)
     -- If last is m/M/t/T then tid will be nil
     local tid = tonumber(word)
-  
+
     if tid == nil then
-      -- If last char is number or different from m/t then timeindex = 1
-      local length_word = string.len(word)
-      local format = string.upper(string.sub(word,length_word,length_word))
-      local index
-      local tid
-  
-      if (format == 'M') then
-          index = 1
-          tid = tonumber(string.sub(word,1,length_word-1))
-      elseif (format == 'T') then
-          index = 60
-          tid = tonumber(string.sub(word,1,length_word-1))
-      else
-          -- timeformat is unknown character - then we set time to 0
-          index = 1
-          tid = 0
-      end
-  
-      return tid * index
+        -- If last char is number or different from m/t then timeindex = 1
+        local length_word = string.len(word)
+        local format = string.upper(string.sub(word,length_word,length_word))
+        local index
+        local tid
+
+        if (format == 'M') then
+            index = 1
+            tid = tonumber(string.sub(word,1,length_word-1))
+        elseif (format == 'T') then
+            index = 60
+            tid = tonumber(string.sub(word,1,length_word-1))
+        else
+            -- timeformat is unknown character - then we set time to 0
+            index = 1
+            tid = 0
+        end
+
+        return tid * index
     else
-      return tid
+        return tid
     end
-  end
+end
 
 
-  local function time_formated(seconds)
+function time_formated(seconds)
     if seconds == nil then
-      seconds = os.time()
+        seconds = os.time()
     end
     return os.date("%Y%m%d%H%M%S", seconds)
-  end
+end
   
   
-  local function rapport_innstillinger_dag(dag)
+function rapport_innstillinger_dag(dag)
     local aInnstillinger = {}
-  
+
     aInnstillinger["start"] = os.date("%Y%m%d000000", dag)
     aInnstillinger["stopp"] = os.date("%Y%m%d000000", dag + (60*60*24))
     aInnstillinger["summering"] = true
     aInnstillinger["filnavn"] = os.date("%Y%m%d.txt", dag)
-  
+
     return aInnstillinger
-  end
+end
   
   
-  local function rapport_innstillinger_uke(uke)
+function rapport_innstillinger_uke(uke)
     local aInnstillinger = {}
-  
+
     local start = FirstDayOfWeekInSeconds(uke)
     local stopp = start + (60*60*24*7)
-  
+
     aInnstillinger["start"] = os.date("%Y%m%d000000", start)
     aInnstillinger["stopp"] = os.date("%Y%m%d000000", stopp)
     aInnstillinger["summering"] = false
     aInnstillinger["filnavn"] = os.date("%Yuke%W.txt", uke)
-  
+
     return aInnstillinger
-  end
+end
   
   
-  local function rapport_innstillinger_mnd(mnd)
+function rapport_innstillinger_mnd(mnd)
     local aInnstillinger = {}
-  
+
     local year_start = tonumber(os.date("%Y", mnd))
     local month_start = tonumber(os.date("%m", mnd))
     local start = os.time({year = year_start, month = month_start, day = 1})
@@ -554,55 +559,55 @@ local function get_time(word)
         month_stopp = month_start + 1
     end
     local stopp = os.time({year = year_stopp, month = month_stopp, day = 1})
-  
+
     aInnstillinger["start"] = os.date("%Y%m%d000000", start)
     aInnstillinger["stopp"] = os.date("%Y%m%d000000", stopp)
     aInnstillinger["summering"] = false
     aInnstillinger["filnavn"] = os.date("%Ymnd%m.txt", mnd)
-  
-    return aInnstillinger
-  end
 
-  local function splitCommandFromSentence(sentence)
+    return aInnstillinger
+end
+
+function splitCommandFromSentence(sentence)
     local words = {}
     local SplittFirstNWords = 2
-  
+
     local function splitHelper(str, nWords)
         streng = left_trim(str)
         local spaceIndex = string.find(streng, " ")
-  
+
         if spaceIndex then
             local word = string.sub(streng, 1, spaceIndex - 1)
             table.insert(words, word)
             if nWords ~= #words then
-              splitHelper(string.sub(streng, spaceIndex + 1), nWords)
+                splitHelper(string.sub(streng, spaceIndex + 1), nWords)
             end
         else
             table.insert(words, streng)
         end
     end
-  
+
     setning = right_trim(sentence)
-  
+
     splitHelper(setning, SplittFirstNWords)
-  
+
     return words
-  end
+end
 
 
-  function ToDagliglogg( Command )
-    return function()
-      if Command == "SendTo" then
-        local active_application = hs.application.frontmostApplication()
-  
-        db = hs.sqlite3.open(db_dagliglogg_directory .. db_dagliglogg_file)
-        dagliglogg_ny(db)
-        db:close()
-  
-        if not active_application:activate() then
-          error_message = "Fikk ikke aktivert siste aktive applikasjon"
-          print("Error:", error_message)
-        end
-      end
+function ToDagliglogg( Command )
+return function()
+    if Command == "SendTo" then
+    local active_application = hs.application.frontmostApplication()
+
+    db = hs.sqlite3.open(db_dagliglogg_directory .. db_dagliglogg_file)
+    dagliglogg_ny(db)
+    db:close()
+
+    if not active_application:activate() then
+        error_message = "Fikk ikke aktivert siste aktive applikasjon"
+        print("Error:", error_message)
     end
-  end
+    end
+end
+end
