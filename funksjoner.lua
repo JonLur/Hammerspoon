@@ -3,8 +3,8 @@
 -- File: funksjoner.lua
 -- Author: Jon Lurås
 -- Date: 2023.11.12
--- Endret: 2023.12.23
--- Version: 3.0.0
+-- Endret: 2023.12.25
+-- Version: 3.0.3
 ------------------------
 
 --- Support functions
@@ -309,24 +309,6 @@ function InOmniFocus( Command )
 end
 
 
-function ToDagliglogg( Command )
-  return function()
-    if Command == "SendTo" then
-      local active_application = hs.application.frontmostApplication()
-
-      db = hs.sqlite3.open(db_dagliglogg_directory .. db_dagliglogg_file)
-      dagliglogg_ny(db)
-      db:close()
-
-      if not active_application:activate() then
-        error_message = "Fikk ikke aktivert siste aktive applikasjon"
-        print("Error:", error_message)
-      end
-    end
-  end
-end
-
-
 function LockScreen()
   return function()
     -- Lock screen
@@ -402,33 +384,6 @@ function StandardOpening( AppNamesMonitor )
 end
 
 
-function splitCommandFromSentence(sentence)
-  local words = {}
-  local SplittFirstNWords = 2
-
-  local function splitHelper(str, nWords)
-      streng = left_trim(str)
-      local spaceIndex = string.find(streng, " ")
-
-      if spaceIndex then
-          local word = string.sub(streng, 1, spaceIndex - 1)
-          table.insert(words, word)
-          if nWords ~= #words then
-            splitHelper(string.sub(streng, spaceIndex + 1), nWords)
-          end
-      else
-          table.insert(words, streng)
-      end
-  end
-
-  setning = right_trim(sentence)
-
-  splitHelper(setning, SplittFirstNWords)
-
-  return words
-end
-
-
 function UpperAllText(TextArray)
   local words = {}
   local index = 1
@@ -443,93 +398,4 @@ function UpperAllText(TextArray)
     end
   end
   return ToUpper(TextArray)
-end
-
-
-function time_formated(seconds)
-  if seconds == nil then
-    seconds = os.time()
-  end
-  return os.date("%Y%m%d%H%M%S", seconds)
-end
-
-
-function rapport_innstillinger_dag(dag)
-  local aInnstillinger = {}
-
-  aInnstillinger["start"] = os.date("%Y%m%d000000", dag)
-  aInnstillinger["stopp"] = os.date("%Y%m%d000000", dag + (60*60*24))
-  aInnstillinger["summering"] = true
-  aInnstillinger["filnavn"] = os.date("%Y%m%d.txt", dag)
-
-  return aInnstillinger
-end
-
-
-function rapport_innstillinger_uke(uke)
-  local aInnstillinger = {}
-
-  local start = FirstDayOfWeekInSeconds(uke)
-  local stopp = start + (60*60*24*7)
-
-  aInnstillinger["start"] = os.date("%Y%m%d000000", start)
-  aInnstillinger["stopp"] = os.date("%Y%m%d000000", stopp)
-  aInnstillinger["summering"] = false
-  aInnstillinger["filnavn"] = os.date("%Yuke%W.txt", uke)
-
-  return aInnstillinger
-end
-
-
-function rapport_innstillinger_mnd(mnd)
-  local aInnstillinger = {}
-
-  local year_start = tonumber(os.date("%Y", mnd))
-  local month_start = tonumber(os.date("%m", mnd))
-  local start = os.time({year = year_start, month = month_start, day = 1})
-  if (month == 12) then
-      year_stopp = year_start + 1
-      month_stopp = 1
-  else
-      year_stopp = year_start
-      month_stopp = month_start + 1
-  end
-  local stopp = os.time({year = year_stopp, month = month_stopp, day = 1})
-
-  aInnstillinger["start"] = os.date("%Y%m%d000000", start)
-  aInnstillinger["stopp"] = os.date("%Y%m%d000000", stopp)
-  aInnstillinger["summering"] = false
-  aInnstillinger["filnavn"] = os.date("%Ymnd%m.txt", mnd)
-
-  return aInnstillinger
-end
-
-
-function get_time(word)
-  -- If last is m/M/t/T then tid will be nil
-  local tid = tonumber(word)
-
-  if tid == nil then
-    -- If last char is number or different from m/t then timeindex = 1
-    local length_word = string.len(word)
-    local format = string.upper(string.sub(word,length_word,length_word))
-    local index
-    local tid
-
-    if (format == 'M') then
-        index = 1
-        tid = tonumber(string.sub(word,1,length_word-1))
-    elseif (format == 'T') then
-        index = 60
-        tid = tonumber(string.sub(word,1,length_word-1))
-    else
-        -- timeformat is unknown character - then we set time to 0
-        index = 1
-        tid = 0
-    end
-
-    return tid * index
-  else
-    return tid
-  end
 end
