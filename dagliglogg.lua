@@ -36,6 +36,7 @@ db_dagliglogg:close()
 
 myWebview = nil
 
+
 function get_last_time(db)
     local stmt = db:prepare("SELECT max(timestamp) FROM daglig")
 
@@ -67,6 +68,7 @@ function get_last_time(db)
 
     return lasttime
 end
+
 
 function get_last_lengde_text(db)
     return function (lasttime)
@@ -110,6 +112,7 @@ function get_last_lengde_text(db)
         return lastlengde, lasttext
     end
 end
+
 
 function get_report(db)
     return function(periodestart, periodeslutt, periodesummering, rapportfilnavn)
@@ -269,7 +272,6 @@ function dagliglogg_ny(db_daglig)
 
     if (respons == "OK") then
         TekstInput = UpperAllText(splitCommandFromSentence(beskrivelse))
-
         if (string.find(kommandoer, TekstInput[1]) ~= nil ) then
             if (TekstInput[1] == 'STOPP') then
                 if (lastlengde == 0) then
@@ -382,10 +384,10 @@ function get_report_html(db)
             myWebview:delete(false)
         end
         myWebview = hs.webview.new({
-            x = 100,
+            x = 200,
             y = 100,
-            w = 400,
-            h = 300
+            w = 600,
+            h = 400
         })
         local htmlContentStart = [[
             <!DOCTYPE html>
@@ -420,7 +422,7 @@ function get_report_html(db)
         stmt:bind(2,periodeslutt)
 
         -- Write headers
-        table_lines_html = string.format("<tr><th>%s</th><th>%s</th><th>%s</th></tr>\n", "Tidspunkt", "Lengde", "Tekst")
+        table_lines_html = string.format("<tr><th style=\"width:120px\">%s</th><th>%s</th><th>%s</th></tr>\n", "Tidspunkt", "Lengde", "Tekst")
 
         -- Loop through the results and print them to the file
         while stmt:step() == hs.sqlite3.ROW do
@@ -441,7 +443,7 @@ function get_report_html(db)
             end
 
             -- Print or format the values as needed
-            table_lines_html = table_lines_html .. string.format("<tr><td>%s</td><td style=\"text-align:right\">%s</td><td>%s</td></tr>\n", timestamp, lengde, tekst)
+            table_lines_html = table_lines_html .. string.format("<tr><td style=\"width:120px;vertical-align:top;\">%s</td><td style=\"text-align:right;padding-right:5px;vertical-align:top;\">%s</td><td>%s</td></tr>\n", timestamp, lengde, tekst)
         end
 
         if (periodesummering) then
@@ -449,17 +451,21 @@ function get_report_html(db)
             local min = totalsum % 60
             local timer = (totalsum-min) / 60
             sum = string.format("%d:%d", timer, min)
-            table_lines_html = table_lines_html .. string.format("<tr><td>%s</td><td style=\"text-align:right\">%s</td><td>%s</td></tr>\n", "Totalt", sum, "")
+            table_lines_html = table_lines_html .. string.format("<tr><td style=\"width:120px\">%s</td><td style=\"text-align:right;padding-right:5px;\">%s</td><td>%s</td></tr>\n", "Totalt", sum, "")
         end
 
         htmlContent = htmlContentStart .. table_lines_html .. htmlContentSlutt
 
-        -- Load the HTML content into the webview and display it
-        myWebview:windowStyle(11)
+        myWindowStyle = hs.webview.windowMasks.titled | hs.webview.windowMasks.closable | hs.webview.windowMasks.resizable
+        -- hs.webview.windowMasks.borderless, hs.webview.windowMasks.titled, hs.webview.windowMasks.closable
+        -- hs.webview.windowMasks.miniaturizable, hs.webview.windowMasks.resizable, hs.webview.windowMasks.utility
+        -- hs.webview.windowMasks.nonactivating, hs.webview.windowMasks.texturedBackground, hs.webview.windowMasks.HUD
+        -- hs.webview.windowMasks.fullSizeContentView
+
+        myWebview:windowStyle(myWindowStyle)
         myWebview:windowTitle("Dagliglogg")
         myWebview:titleVisibility("visible")
         myWebview:closeOnEscape(true)
-        -- myWebview:deleteOnClose(true)
         myWebview:html(htmlContent):show()
 
         -- Finalize the statement
