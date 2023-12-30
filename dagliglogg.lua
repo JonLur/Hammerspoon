@@ -32,6 +32,7 @@ db_dagliglogg_table = "daglig"
 -- result = hs.fs.chdir(db_dagliglogg_dir)
 db_dagliglogg = hs.sqlite3.open(db_dagliglogg_directory .. db_dagliglogg_file)
 db_dagliglogg:exec("CREATE TABLE IF NOT EXISTS " .. db_dagliglogg_table .. " (timestamp STRING, lengde INTEGER, text STRING)")
+db_dagliglogg:exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_timestamp ON " .. db_dagliglogg_table .. " (timestamp)")
 db_dagliglogg:close()
 
 myWebview = nil
