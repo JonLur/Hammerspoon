@@ -241,9 +241,9 @@ function dagliglogg_ny(db_daglig)
     local ukenr = nil
     local dato = nil
 
-    if myWebview ~= nil then
-        myWebview:delete(false)
-    end
+--    if myWebview ~= nil then
+--        myWebview:delete(false)
+--    end
 
     local last_time, errormessage = get_last_time(db_daglig)
     if not last_time then
@@ -597,18 +597,18 @@ end
 
 
 function ToDagliglogg( Command )
-return function()
-    if Command == "SendTo" then
-    local active_application = hs.application.frontmostApplication()
+    return function()
+        if Command == "SendTo" then
+            local active_application = hs.application.frontmostApplication()
 
-    db = hs.sqlite3.open(db_dagliglogg_directory .. db_dagliglogg_file)
-    dagliglogg_ny(db)
-    db:close()
+            db = hs.sqlite3.open(db_dagliglogg_directory .. db_dagliglogg_file)
+            dagliglogg_ny(db)
+            db:close()
 
-    if not active_application:activate() then
-        error_message = "Fikk ikke aktivert siste aktive applikasjon"
-        print("Error:", error_message)
+            if not active_application:activate() then
+                error_message = "Fikk ikke aktivert siste aktive applikasjon"
+                print("Error:", error_message)
+            end
+        end
     end
-    end
-end
 end
