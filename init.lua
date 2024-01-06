@@ -46,6 +46,7 @@ end
 
 watcher = hs.application.watcher.new(applicationWatcher)
 
+
 --- Applications
 table.insert(MyHotKeys, {KeyModifier("CtrlAlt"), KeyHotKey("O"), HelpText("OmniFocus"), ApplicationFocus("OmniFocus")})
 table.insert(MyHotKeys, {KeyModifier("CtrlAlt"), KeyHotKey("L"), HelpText("LastPass"), ApplicationFocus("LastPass")})
