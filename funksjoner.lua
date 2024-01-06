@@ -249,7 +249,9 @@ end
 
 function ApplicationFocus( AppName )
   return function ()
-    hs.application.launchOrFocus( AppName)
+    if not hs.application.launchOrFocus( AppName ) then
+      hs.application.launchOrFocusByBundleID( AppName )
+    end
     watcher:start()
   end
 end
@@ -349,7 +351,7 @@ end
 
 function StandardOpening( AppNamesMonitor )
   return function()
-    if not (AppNamesMonitor[1] == nil) then
+    if (#AppNamesMonitor > 0) then
       local skjermer = hs.screen.allScreens()
 
       for i, v in ipairs(AppNamesMonitor) do
@@ -358,26 +360,27 @@ function StandardOpening( AppNamesMonitor )
         for j, w in ipairs(App) do
           array[j] = w
         end
-        hs.application.launchOrFocus(array[1])
+        if not hs.application.launchOrFocus(array[1]) then
+          
+        end
       end
 
       if #skjermer == 2 then
         -- "C34J79x", "BenQ BL2400", "BenQ G2420HD", "PHL 272S4L" "(un-named screen)"
-        if not (string.find(skjermer[2]:name(), "C34J79x") == nil) then
+        -- if not (string.find(skjermer[2]:name(), "C34J79x") == nil) then
+        -- if not (string.find(skjermer[2]:name(), "BenQ BL2400") == nil) then
           for i, v in ipairs(AppNamesMonitor) do
-            App = v
-            array = {}
-            for j, w in ipairs(App) do
-              array[j] = w
-            end
-            application = hs.application.open(array[1])
+            app = v[1]
+            skjerm = v[2]
+            application = hs.application.open(app)
+            print(app)
             win = application:focusedWindow()
             if not (win == nil) then
               -- When Lastpass needs login it returns "nil"
-              win:moveToScreen(skjermer[array[2]], true)
+              win:moveToScreen(skjermer[skjerm], true)
             end
           end
-        end
+        -- end
       end
     end
   end
