@@ -3,9 +3,11 @@
 -- File: funksjoner.lua
 -- Author: Jon Lurås
 -- Date: 2023.11.12
--- Endret: 2023.12.25
--- Version: 3.0.3
+-- Endret: 2024.10.19
+-- Version: 3.0.4
 ------------------------
+
+applicationFocusControl = false
 
 --- Support functions
 -- Helper for pasting
@@ -38,14 +40,20 @@ end
 
 
 function applicationWatcher(appName, eventType, app)
-  -- logApplicationWatcher(appName, eventType)
-  if eventType == hs.application.watcher.activated
-  or eventType == hs.application.watcher.launched	then
-    window = hs.window.focusedWindow()
-    if window then
-      centerMouseActiveWindow(window)
-      watcher:stop()
+  local currentapp, currentwindow
+
+  if applicationFocusControl then
+    -- logApplicationWatcher(appName, eventType)
+    if eventType == hs.application.watcher.activated then
+      currentwindow = hs.window.focusedWindow()
+      currentapp = currentwindow:application()
+      if appName == currentapp:name() then
+        centerMouseActiveWindow(currentwindow)
+        spoon.MouseCircle:show()
+      end
     end
+    watcher:stop()
+    applicationFocusControl = false
   end
 end
 
@@ -249,10 +257,11 @@ end
 
 function ApplicationFocus( AppName )
   return function ()
+    watcher:start()
+    applicationFocusControl = true
     if not hs.application.launchOrFocus( AppName ) then
       hs.application.launchOrFocusByBundleID( AppName )
     end
-    watcher:start()
   end
 end
 
