@@ -3,8 +3,8 @@
 -- File: jobbmaskin.lua
 -- Author: Jon Lurås
 -- Date: 2023.11.12
--- Endret: 2023.12.23
--- Version: 3.0.0
+-- Endret: 2024.10.19
+-- Version: 3.0.4
 ------------------------
 
 hs.loadSpoon("DeepLTranslate")
@@ -13,8 +13,9 @@ spoon.DeepLTranslate:bindHotkeys({translate={{"ctrl", "alt", "cmd" }, "O" }})
 table.insert(StandardStartMonitor, {"Microsoft Outlook", 1})
 table.insert(StandardStartMonitor, {"OmniFocus", 2})
 table.insert(StandardStartMonitor, {"Microsoft Edge", 2})
-table.insert(StandardStartMonitor, {"Microsoft Remote Desktop", 2})
-table.insert(StandardStartMonitor, {"com.microsoft.teams2", 1})
+-- table.insert(StandardStartMonitor, {"Microsoft Remote Desktop", 2})
+table.insert(StandardStartMonitor, {"Windows App", 2})
+table.insert(StandardStartMonitor, {"Microsoft Teams", 1})
 table.insert(StandardStartMonitor, {"Microsoft OneNote", 2})
 table.insert(StandardStartMonitor, {"Lastpass", 1})
 

@@ -3,8 +3,8 @@
 -- File: init.lua
 -- Author: Jon Lurås
 -- Date: 2023.11.12
--- Endret: 2023.12.23
--- Version: 3.0.0
+-- Endret: 2024.10.19
+-- Version: 3.0.4
 ------------------------
 
 hs = _ENV.hs
@@ -15,6 +15,15 @@ StandardStartMonitor = {}
 
 hints = require "hs.hints"
 watcher = nil
+
+-- hs.loadSpoon("SpoonInstall")
+-- spoon.SpoonInstall:updateRepo('default')
+-- spoon.SpoonInstall:installSpoonFromRepo("SpoonInstall")
+-- spoon.SpoonInstall:installSpoonFromRepo("DeepLTranslate")
+-- spoon.SpoonInstall:installSpoonFromRepo("MouseCircle")
+-- spoon.SpoonInstall:installSpoonFromRepo("PushToTalk")
+-- spoon.SpoonInstall:installSpoonFromRepo("SendToOmniFocus")
+-- spoon.SpoonInstall:installSpoonFromRepo("WindowScreenLeftAndRight")
 
 --- Spoons
 hs.loadSpoon("WindowScreenLeftAndRight")
@@ -45,7 +54,7 @@ else
 end
 
 watcher = hs.application.watcher.new(applicationWatcher)
--- watcher:start()
+
 
 --- Applications
 table.insert(MyHotKeys, {KeyModifier("CtrlAlt"), KeyHotKey("O"), HelpText("OmniFocus"), ApplicationFocus("OmniFocus")})

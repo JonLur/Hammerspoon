@@ -472,7 +472,7 @@ function get_report_html(db)
         myWebview:windowTitle("Dagliglogg")
         myWebview:titleVisibility("visible")
         myWebview:closeOnEscape(true)
-        myWebview:bringToFront()
+        -- myWebview:brintToFront()
         myWebview:html(htmlContent):show()
 
         -- Finalize the statement
