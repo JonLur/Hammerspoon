@@ -61,6 +61,7 @@ table.insert(MyHotKeys, {KeyModifier("CtrlAlt"), KeyHotKey("O"), HelpText("OmniF
 table.insert(MyHotKeys, {KeyModifier("CtrlAlt"), KeyHotKey("L"), HelpText("LastPass"), ApplicationFocus("LastPass")})
 table.insert(MyHotKeys, {KeyModifier("CtrlAlt"), KeyHotKey("I"), HelpText("iTerm2"), ApplicationFocus("iTerm")})
 table.insert(MyHotKeys, {KeyModifier("CtrlAlt"), KeyHotKey("P"), HelpText("PreView"), ApplicationFocus("PreView")})
+table.insert(MyHotKeys, {KeyModifier("CtrlAlt"), KeyHotKey("U"), HelpText("Final Cut Pro"), ApplicationFocus("Final Cut Pro")})
 table.insert(MyHotKeys, {KeyModifier("CtrlAlt"), KeyHotKey("F"), HelpText("Search remaining in OmniFocus"), InOmniFocus("FindIn")})
 table.insert(MyHotKeys, {KeyModifier("CtrlAlt"), KeyHotKey("H"), HelpText("Copy selected to OmniFocus"), InOmniFocus("CopyTo")})
 table.insert(MyHotKeys, {KeyModifier("CtrlAlt"), KeyHotKey("J"), HelpText("Dagliglogg to Sqlite3"), ToDagliglogg("SendTo")})
