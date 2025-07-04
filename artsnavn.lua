@@ -5,27 +5,76 @@ local choices={}
 --  {["text"]="engringvinge;Coenonympha pamphilus"},
 --  }
 
--- Opens a file in read mode
-file = io.open("/Users/jon/Documents/Artsjakt/artsnavn.txt", "r")
-allearter=file:read("*a")
-file:close()
-
 function trim(s)
    return s:match "^%s*(.-)%s*$"
 end
 
-local x, a, b = 1;
-while x < string.len(allearter) do
-  a, b = string.find(allearter, '.-\n', x);
-  if not a then
-    break;
-  else
-    choices[#choices+1]={["text"]=trim(string.sub(allearter,a,b))}
+-- Timestamp "modification"
+artsnavnTXT = "/Users/jon/Documents/Artsjakt/artsnavn.txt"
+artsnavnDB = "/Users/jon/Documents/Artsjakt/artsnavn.sqlite3"
+timestampTXT = hs.fs.attributes(artsnavnTXT, 'modification')
+timestampDB = hs.fs.attributes(artsnavnDB, 'modification')
+if timestampDB == nil then
+  timestampDB = 0
+end
+
+if timestampTXT > timestampDB then
+  file = io.open(artsnavnTXT, "r")
+  allearter=file:read("*a")
+  file:close()
+
+  -- db = hs.sqlite3.open(artsnavnDB)
+  dbmem = hs.sqlite3.open_memory()
+  -- sqldrop = "DROP TABLE arter"
+  -- db:exec(sqldrop)
+  sqlcreate = "CREATE TABLE arter(id INTEGER PRIMARY KEY, artsnavn TEXT)"
+  dbmem:exec(sqlcreate)
+
+  local sqlmemstmt = dbmem:prepare("INSERT INTO arter (artsnavn) VALUES (?)")
+
+  local x, a, b = 1;
+  while x < string.len(allearter) do
+    a, b = string.find(allearter, '.-\n', x);
+    if not a then
+      break;
+    else
+      sqlmemstmt:bind_values(trim(string.sub(allearter,a,b)))
+      sqlmemstmt:step()
+      sqlmemstmt:reset()
+    end;
+    x = b + 1;
   end;
-  x = b + 1;
+
+  sqlmemstmt:finalize()
+
+
+  local dbfile = hs.sqlite3.open(artsnavnDB)
+  sqldrop = "DROP TABLE arter"
+  dbfile:exec(sqldrop)
+  sqlcreate = "CREATE TABLE arter(id INTEGER PRIMARY KEY, artsnavn TEXT)"
+  dbfile:exec(sqlcreate)
+
+  local sqlfilestmt = dbfile:prepare("INSERT INTO arter (artsnavn) VALUES (?)")
+
+  for nrow in dbmem:nrows("SELECT artsnavn FROM arter ORDER BY artsnavn") do
+      sqlfilestmt:bind_values(nrow.artsnavn)
+      sqlfilestmt:step()
+      sqlfilestmt:reset()
+  end
+  sqlfilestmt:finalize()
+  dbmem:close()
+  dbfile:close()
 end;
 
-table.sort(choices, function(a,b) en=a["text"] to=b["text"] return en<to end )
+db = hs.sqlite3.open(artsnavnDB)
+-- Les data med prepare
+for nrow in db:nrows("SELECT artsnavn FROM arter") do
+  choices[#choices+1]={["text"]=nrow.artsnavn}
+end
+-- Lukk databasen
+db:close()
+
+-- table.sort(choices, function(a,b) en=a["text"] to=b["text"] return en<to end )
 
 function sendTastDown()
   hs.eventtap.keyStroke(nil,"down")
