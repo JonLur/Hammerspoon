@@ -1,4 +1,4 @@
-choices={}
+local choices={}
 --local choices = {
 --  {["text"]="heroringvinge;Coenonympha hero"},
 --  {["text"]="gullringvinge;Aphantopus hyperantus"},
@@ -53,45 +53,6 @@ function sendTastEnter()
   hs.eventtap.keyStroke(nil,"return")
 end
 
-
--- Timestamp "modification"
-artsnavnTXT = "/Users/jon/Documents/Artsjakt/artsnavn.txt"
-artsnavnDB = "/Users/jon/Documents/Artsjakt/artsnavn.sqlite3"
-local timestampTXT = hs.fs.attributes(artsnavnTXT, 'modification')
-local timestampDB = hs.fs.attributes(artsnavnDB, 'modification')
-if timestampDB == nil then
-  timestampDB = 0
-end
-
-if timestampTXT > timestampDB then
-
-  local allearter = readFile(artsnavnTXT)
-
-  local dbmem = hs.sqlite3.open_memory()
-  local sqlcreate = "CREATE TABLE arter(id INTEGER PRIMARY KEY, artsnavn TEXT)"
-  dbmem:exec(sqlcreate)
-
-  readArterFileToSQL( dbmem, allearter )
-
-  local dbfile = hs.sqlite3.open(artsnavnDB)
-  sqldrop = "DROP TABLE arter"
-  dbfile:exec(sqldrop)
-  sqlcreate = "CREATE TABLE arter(id INTEGER PRIMARY KEY, artsnavn TEXT)"
-  dbfile:exec(sqlcreate)
-
-  moveArterSQLToSQL( dbmem, dbfile )
-
-  dbmem:close()
-  dbfile:close()
-
-end
-
-db = hs.sqlite3.open(artsnavnDB)
-for nrow in db:nrows("SELECT artsnavn FROM arter") do
-  choices[#choices+1]={["text"]=nrow.artsnavn}
-end
-db:close()
-
 -- Create the chooser.
 function chooserFunction(choices)
   if (choices) then
@@ -108,13 +69,58 @@ function chooserFunction(choices)
   hammer:hide()
 end
 
-chooser = hs.chooser.new(chooserFunction)
-
-function showChooser()
-  chooser:show()
+function setupChooser()
+  chooser = hs.chooser.new(chooserFunction)
+  function showChooser()
+    chooser:show()
+  end
+  chooser:searchSubText(true)
+  chooser:choices(choices)
+  hs.hotkey.bind({"ctrl", "alt"}, "B", "Artsnavn", showChooser)
 end
 
-chooser:searchSubText(true)
-chooser:choices(choices)
 
-hs.hotkey.bind({"ctrl", "alt"}, "B", "Artsnavn", showChooser)
+function artsnavnoppdater( txtfilenavn, dbfilenavn )
+  local allearter = readFile(txtfilenavn)
+
+  local dbmem = hs.sqlite3.open_memory()
+  local sqlcreate = "CREATE TABLE arter(id INTEGER PRIMARY KEY, artsnavn TEXT)"
+  dbmem:exec(sqlcreate)
+
+  readArterFileToSQL( dbmem, allearter )
+
+  local dbfile = hs.sqlite3.open(dbfilenavn)
+  sqldrop = "DROP TABLE arter"
+  dbfile:exec(sqldrop)
+  sqlcreate = "CREATE TABLE arter(id INTEGER PRIMARY KEY, artsnavn TEXT)"
+  dbfile:exec(sqlcreate)
+
+  moveArterSQLToSQL( dbmem, dbfile )
+
+  dbmem:close()
+  dbfile:close()
+end
+
+function oppdaterchoices(dbfile)
+  db = hs.sqlite3.open(dbfile)
+  for nrow in db:nrows("SELECT artsnavn FROM arter") do
+    choices[#choices+1]={["text"]=nrow.artsnavn}
+  end
+  db:close()
+end
+
+-- Timestamp "modification"
+artsnavnTXT = "/Users/jon/Documents/Artsjakt/artsnavn.txt"
+artsnavnDB = "/Users/jon/Documents/Artsjakt/artsnavn.sqlite3"
+local timestampTXT = hs.fs.attributes(artsnavnTXT, 'modification')
+local timestampDB = hs.fs.attributes(artsnavnDB, 'modification')
+if timestampDB == nil then
+  timestampDB = 0
+end
+
+if timestampTXT > timestampDB then
+  artsnavnoppdater( artsnavnTXT, artsnavnDB )
+end
+
+oppdaterchoices(artsnavnDB)
+setupChooser()
